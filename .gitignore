@@ -1,0 +1,18 @@
+# Compiled JavaScript files
+lib/**/*.js
+lib/**/*.js.map
+
+# TypeScript v1 declaration files
+typings/
+
+# Node.js dependency directory
+node_modules/
+
+# All log files
+*.log
+
+# Environment Variables
+.env.local
+
+# Secret Key
+src/utils/secret_key.json
