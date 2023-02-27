@@ -1,5 +1,6 @@
 import * as functions from 'firebase-functions';
 import { FormDoc, DashboardDoc, Form } from '../../src/utils/types';
+import { updateApplicant } from './applicants';
 import { dbDocRefs, dbColRefs } from './utils/db';
 
 export const createForm = functions.firestore
@@ -83,3 +84,29 @@ export const updateForm = async (
     ...formData,
   });
 };
+
+export const onApplicantNameChange = functions.firestore
+  .document('forms/{formId}')
+  .onUpdate(async (change, context) => {
+    const prevForm = change.before.data() as Form;
+    const newForm = change.after.data() as Form;
+    const nameHasChanged =
+      prevForm.applicant.name !== newForm.applicant.name ||
+      prevForm.applicant.name?.first !== newForm.applicant.name?.first;
+    prevForm.applicant.name?.last !== newForm.applicant.name?.last;
+
+    if (nameHasChanged) {
+      const name = newForm.applicant.name;
+      const { company, dashboard, applicant } = newForm;
+      await updateApplicant(
+        {
+          companyId: company.id,
+          dashboardId: dashboard.id,
+          applicantId: applicant.id,
+        },
+        {
+          name,
+        }
+      );
+    }
+  });

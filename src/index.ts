@@ -14,10 +14,12 @@ import * as dashboards from './dashboards';
 import * as forms from './forms';
 import * as manageFiles from './manage-files';
 import * as taskManager from './task-manager';
+import * as applicants from './applicants';
 
 export const { addCompanyUserRole } = privateData;
 export const { addUserToCompany } = denormalize;
-export const { createForm } = forms;
+export const { createForm, onApplicantNameChange } = forms;
 export const { onFileUpload } = manageFiles;
 export const { onPublishDashboard } = dashboards;
-export const tasks = taskManager;
+export const { formTaskManager, adminTaskManager } = taskManager;
+export const { onUpdateApplicant } = applicants;
