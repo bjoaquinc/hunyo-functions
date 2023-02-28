@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 import { dbColRefs, dbDocRefs } from './utils/db';
 import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
@@ -13,7 +14,8 @@ export const createMessage = async (
   recipients: MessageRecipient[],
   subject: string,
   body: string,
-  fromName?: string
+  fromName?: string,
+  metadata?: { [key: string]: any }
 ) => {
   const messagesRef = dbColRefs.messagesRef;
   await messagesRef.add({
@@ -22,6 +24,7 @@ export const createMessage = async (
     recipients,
     body,
     fromName,
+    metadata,
   });
 };
 
@@ -42,11 +45,14 @@ export const onCreateMessage = functions.firestore
     try {
       const message = snap.data() as Message;
       const messageId = context.params.messageId;
+      const formLink = getFormLink(message);
       const response = (await sendMessage(
         message.body,
         message.subject,
         message.recipients,
-        message.fromName
+        message.fromName,
+        [],
+        formLink
       )) as MessagesSendResponse[];
       const responseObject = response[0];
       const { _id, reject_reason, status } = responseObject;
@@ -62,3 +68,12 @@ export const onCreateMessage = functions.firestore
       functions.logger.log(error);
     }
   });
+
+const getFormLink = (message: Message) => {
+  const { metadata } = message;
+  if (metadata && metadata.formLink) {
+    return metadata.formLink as string;
+  } else {
+    return '';
+  }
+};

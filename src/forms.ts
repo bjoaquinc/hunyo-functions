@@ -98,11 +98,20 @@ export const onCreateForm = functions.firestore
     const { company, dashboard, applicant } = form;
     const EMAIL_SUBJECT =
       'Action required: New documents needed for your application';
+    const DEV_URL = 'http://localhost:8080';
+    const PROD_URL = 'https://hunyo.design';
+    let FORM_LINK = '';
+    if (process.env.NODE_ENV === 'production') {
+      FORM_LINK = `${PROD_URL}/applicant/forms/${form.id}`;
+    } else {
+      FORM_LINK = `${DEV_URL}/applicant/forms/${form.id}`;
+    }
     await createMessage(
       [{ email: applicant.email, type: 'to' }],
       EMAIL_SUBJECT,
       dashboard.messages.opening,
-      company.name
+      company.name,
+      { formLink: FORM_LINK, applicantId: applicant.id }
     );
   });
 
