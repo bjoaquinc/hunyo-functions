@@ -10,6 +10,7 @@ import {
   AdminCheck,
   WorkerDoc,
   Action,
+  Message,
 } from '../../../src/utils/types';
 
 export const converter = <T>() => ({
@@ -22,6 +23,7 @@ export const converter = <T>() => ({
 export const dbColRefs = {
   companiesRef: db.collection('companies').withConverter(converter<Company>()),
   formsRef: db.collection('forms').withConverter(converter<Form>()),
+  messagesRef: db.collection('messages').withConverter(converter<Message>()),
   adminChecksRef: db
     .collection('adminChecks')
     .withConverter(converter<AdminCheck>()),
@@ -69,6 +71,11 @@ export const dbDocRefs = {
       .withConverter(converter<Company>()),
   getFormRef: (formId: string) =>
     db.collection('forms').doc(formId).withConverter(converter<Form>()),
+  getMessageRef: (messageId: string) =>
+    db
+      .collection('messages')
+      .doc(messageId)
+      .withConverter(converter<Message>()),
   getAdminCheckRef: (adminCheckId: string) =>
     db
       .collection('adminChecks')

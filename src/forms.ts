@@ -1,6 +1,7 @@
 import * as functions from 'firebase-functions';
-import { FormDoc, DashboardDoc, Form } from '../../src/utils/types';
+import { FormDoc, DashboardDoc, Form, Applicant } from '../../src/utils/types';
 import { updateApplicant } from './applicants';
+import { createMessage } from './messages';
 import { dbDocRefs, dbColRefs } from './utils/db';
 
 export const createForm = functions.firestore
@@ -17,6 +18,7 @@ export const createForm = functions.firestore
       companyId,
       dashboardId
     );
+    const applicantData = snapshot.data() as Applicant;
     const formsRef = dbColRefs.formsRef;
 
     const companySnap = await companyRef.get();
@@ -40,6 +42,7 @@ export const createForm = functions.firestore
       applicant: {
         id: snapshot.id,
         status: 'Not Submitted',
+        email: applicantData.email,
       },
       company: {
         id: companyId,
@@ -52,6 +55,7 @@ export const createForm = functions.firestore
         deadline: dashboardData.deadline,
         job: dashboardData.job,
         country: dashboardData.country,
+        messages: dashboardData.messages,
       },
       docs: formDocs,
     });
@@ -84,6 +88,23 @@ export const updateForm = async (
     ...formData,
   });
 };
+
+export const onCreateForm = functions.firestore
+  .document('forms/{formId}')
+  .onCreate(async (snapshot, context) => {
+    const form = { id: context.params.formId, ...snapshot.data() } as Form & {
+      id: string;
+    };
+    const { company, dashboard, applicant } = form;
+    const EMAIL_SUBJECT =
+      'Action required: New documents needed for your application';
+    await createMessage(
+      [{ email: applicant.email, type: 'to' }],
+      EMAIL_SUBJECT,
+      dashboard.messages.opening,
+      company.name
+    );
+  });
 
 export const onApplicantNameChange = functions.firestore
   .document('forms/{formId}')

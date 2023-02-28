@@ -15,11 +15,13 @@ import * as forms from './forms';
 import * as manageFiles from './manage-files';
 import * as taskManager from './task-manager';
 import * as applicants from './applicants';
+import * as messages from './messages';
 
 export const { addCompanyUserRole } = privateData;
 export const { addUserToCompany } = denormalize;
-export const { createForm, onApplicantNameChange } = forms;
+export const { createForm, onApplicantNameChange, onCreateForm } = forms;
 export const { onFileUpload } = manageFiles;
 export const { onPublishDashboard } = dashboards;
 export const { formTaskManager, adminTaskManager } = taskManager;
 export const { onUpdateApplicant } = applicants;
+export const { onCreateMessage } = messages;
