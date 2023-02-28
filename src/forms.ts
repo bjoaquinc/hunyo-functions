@@ -1,8 +1,16 @@
 import * as functions from 'firebase-functions';
-import { FormDoc, DashboardDoc, Form, Applicant } from '../../src/utils/types';
+import * as admin from 'firebase-admin';
+import {
+  FormDoc,
+  DashboardDoc,
+  Form,
+  Applicant,
+  Message,
+} from '../../src/utils/types';
 import { updateApplicant } from './applicants';
 import { createMessage } from './messages';
 import { dbDocRefs, dbColRefs } from './utils/db';
+import { Timestamp } from 'firebase/firestore';
 
 export const createForm = functions.firestore
   .document(
@@ -106,13 +114,20 @@ export const onCreateForm = functions.firestore
     } else {
       FORM_LINK = `${DEV_URL}/applicant/forms/${form.id}`;
     }
-    await createMessage(
-      [{ email: applicant.email, type: 'to' }],
-      EMAIL_SUBJECT,
-      dashboard.messages.opening,
-      company.name,
-      { formLink: FORM_LINK, applicantId: applicant.id }
-    );
+    const message: Message = {
+      createdAt: admin.firestore.FieldValue.serverTimestamp() as Timestamp,
+      recipients: [{ email: applicant.email, type: 'to' }],
+      subject: EMAIL_SUBJECT,
+      body: dashboard.messages.opening,
+      fromName: company.name,
+      metadata: {
+        formLink: FORM_LINK,
+        applicantId: applicant.id,
+        dashboardId: dashboard.id,
+        companyId: company.id,
+      },
+    };
+    await createMessage(message);
   });
 
 export const onApplicantNameChange = functions.firestore

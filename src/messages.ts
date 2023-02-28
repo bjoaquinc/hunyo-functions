@@ -2,22 +2,15 @@
 import { dbColRefs, dbDocRefs } from './utils/db';
 import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
-import {
-  MessageRecipient,
-  MessagesSendResponse,
-} from '@mailchimp/mailchimp_transactional';
+import { MessagesSendResponse } from '@mailchimp/mailchimp_transactional';
+import { Message } from '../../src/utils/types';
 import { Timestamp } from 'firebase/firestore';
 import { sendMessage } from './mailchimp';
-import { Message } from '../../src/utils/types';
+import { updateApplicant } from './applicants';
 
-export const createMessage = async (
-  recipients: MessageRecipient[],
-  subject: string,
-  body: string,
-  fromName?: string,
-  metadata?: { [key: string]: any }
-) => {
+export const createMessage = async (message: Message) => {
   const messagesRef = dbColRefs.messagesRef;
+  const { subject, recipients, body, fromName, metadata } = message;
   await messagesRef.add({
     createdAt: admin.firestore.FieldValue.serverTimestamp() as Timestamp,
     subject,
@@ -77,3 +70,37 @@ const getFormLink = (message: Message) => {
     return '';
   }
 };
+
+export const onUpdateMessage = functions.firestore
+  .document('messages/{messageId}')
+  .onUpdate(async (change, context) => {
+    const prevMessage = change.before.data() as Message;
+    const newMessage = change.after.data() as Message;
+    const messageId = context.params.messageId;
+    const applicantMessageStatusUpdated =
+      !prevMessage.messageResponseData &&
+      newMessage.messageResponseData &&
+      newMessage.metadata;
+    if (applicantMessageStatusUpdated) {
+      const { companyId, dashboardId, applicantId } = newMessage.metadata as {
+        companyId: string;
+        dashboardId: string;
+        applicantId: string;
+      };
+      const { status } = newMessage.messageResponseData as { status: string };
+      await updateApplicant(
+        {
+          companyId,
+          dashboardId,
+          applicantId,
+        },
+        {
+          latestMessage: {
+            id: messageId,
+            status: status === 'sent' ? 'Delivered' : 'Not Delivered',
+            sentAt: newMessage.createdAt,
+          },
+        }
+      );
+    }
+  });

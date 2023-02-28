@@ -24,4 +24,4 @@ export const { onFileUpload } = manageFiles;
 export const { onPublishDashboard } = dashboards;
 export const { formTaskManager, adminTaskManager } = taskManager;
 export const { onUpdateApplicant } = applicants;
-export const { onCreateMessage } = messages;
+export const { onCreateMessage, onUpdateMessage } = messages;
