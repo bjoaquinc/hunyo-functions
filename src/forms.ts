@@ -6,6 +6,8 @@ import {
   Form,
   Applicant,
   Message,
+  MessageMetadata,
+  SendApplicantDocumentRequestTemplate,
 } from '../../src/utils/types';
 import { updateApplicant } from './applicants';
 import { createMessage } from './messages';
@@ -114,18 +116,26 @@ export const onCreateForm = functions.firestore
     } else {
       FORM_LINK = `${DEV_URL}/applicant/forms/${form.id}`;
     }
+    const template: SendApplicantDocumentRequestTemplate = {
+      name: 'Applicant Documents Request',
+      data: {
+        formLink: FORM_LINK,
+        companyName: company.name,
+      },
+    };
+    const metadata: MessageMetadata = {
+      companyId: company.id,
+      dashboardId: dashboard.id,
+      applicantId: applicant.id,
+    };
     const message: Message = {
       createdAt: admin.firestore.FieldValue.serverTimestamp() as Timestamp,
       recipients: [{ email: applicant.email, type: 'to' }],
       subject: EMAIL_SUBJECT,
       body: dashboard.messages.opening,
       fromName: company.name,
-      metadata: {
-        formLink: FORM_LINK,
-        applicantId: applicant.id,
-        dashboardId: dashboard.id,
-        companyId: company.id,
-      },
+      metadata: metadata,
+      template,
     };
     await createMessage(message);
   });
