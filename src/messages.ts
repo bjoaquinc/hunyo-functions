@@ -4,7 +4,7 @@ import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
 import { Message } from '../../src/utils/types';
 import { Timestamp } from 'firebase/firestore';
-import { sendMessage } from './mailchimp';
+import { mailchimpAPIKey, sendMessage } from './mailchimp';
 import { updateApplicant } from './applicants';
 import { MessagesSendResponse } from '@mailchimp/mailchimp_transactional';
 
@@ -36,6 +36,9 @@ export const updateMessage = async (
 
 export const onCreateMessage = functions
   .region('asia-southeast2')
+  .runWith({
+    secrets: [mailchimpAPIKey],
+  })
   .firestore.document('messages/{messageId}')
   .onCreate(async (snap, context) => {
     try {

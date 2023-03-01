@@ -26,5 +26,6 @@ module.exports = {
     indent: 0,
     '@typescript-eslint/indent': 0,
     'object-curly-spacing': 0,
+    'quote-props': 0,
   },
 };

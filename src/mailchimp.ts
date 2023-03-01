@@ -3,8 +3,10 @@ import {
   Message,
   SendApplicantDocumentRequestTemplate,
 } from '../../src/utils/types';
+import { defineSecret } from 'firebase-functions/params';
+export const mailchimpAPIKey = defineSecret('MAILCHIMP_API_KEY');
 
-const client = mailchimp(process.env.MAILCHIMP_API_KEY as string);
+const client = mailchimp(mailchimpAPIKey as unknown as string);
 
 export const sendMessage = async (message: Message) => {
   const mailchimpMessage: MessagesMessage = {
