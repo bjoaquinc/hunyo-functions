@@ -7,9 +7,6 @@ const bucket = admin.storage().bucket();
 import FormData from 'form-data';
 import { updateForm } from './forms';
 type ContentTypes = 'jpeg' | 'pdf';
-import { defineSecret } from 'firebase-functions/params';
-const siteEngineAPISecret = defineSecret('SITE_ENGINE_API_SECRET');
-const siteEngineAPIUser = defineSecret('SITE_ENGINE_API_USER');
 const NEW_IMAGE_WIDTH = 1240;
 
 export const onFileUpload = functions
@@ -17,7 +14,7 @@ export const onFileUpload = functions
   .runWith({
     timeoutSeconds: 400,
     memory: '1GB',
-    secrets: [siteEngineAPISecret, siteEngineAPIUser],
+    secrets: ['SITE_ENGINE_API_SECRET', 'SITE_ENGINE_API_USER'],
   })
   .storage.object()
   .onFinalize(async (object, context) => {
@@ -260,8 +257,8 @@ const getImageProperties = async (image: Buffer, imagePath: string) => {
       filename: imagePath,
     });
     data.append('models', 'properties');
-    data.append('api_user', siteEngineAPIUser);
-    data.append('api_secret', siteEngineAPISecret);
+    data.append('api_user', process.env.SITE_ENGINE_API_USER);
+    data.append('api_secret', process.env.SITE_ENGINE_API_USER);
 
     const response = await axios({
       method: 'post',

@@ -1,12 +1,9 @@
+import * as functions from 'firebase-functions';
 import mailchimp, { MessagesMessage } from '@mailchimp/mailchimp_transactional';
 import {
   Message,
   SendApplicantDocumentRequestTemplate,
 } from '../../src/utils/types';
-import { defineSecret } from 'firebase-functions/params';
-export const mailchimpAPIKey = defineSecret('MAILCHIMP_API_KEY');
-
-const client = mailchimp(mailchimpAPIKey as unknown as string);
 
 export const sendMessage = async (message: Message) => {
   const mailchimpMessage: MessagesMessage = {
@@ -33,6 +30,7 @@ export const sendMessage = async (message: Message) => {
 };
 
 const sendPlainTextMessage = async (message: MessagesMessage) => {
+  const client = mailchimp(process.env.MAILCHIMP_API_KEY as string);
   const response = await client.messages.send({ message });
   return response;
 };
@@ -42,6 +40,7 @@ const sendTemplateMessage = async (
   template: SendApplicantDocumentRequestTemplate
 ) => {
   const response = await emailTemplates[template.name](message, template);
+  functions.logger.log('Sending error', response);
   return response;
 };
 
@@ -50,6 +49,7 @@ const emailTemplates = {
     message: MessagesMessage,
     template: SendApplicantDocumentRequestTemplate
   ) => {
+    const client = mailchimp(process.env.MAILCHIMP_API_KEY as string);
     const response = await client.messages
       .sendTemplate({
         message: {
