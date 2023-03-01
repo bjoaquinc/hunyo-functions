@@ -258,7 +258,7 @@ const getImageProperties = async (image: Buffer, imagePath: string) => {
     });
     data.append('models', 'properties');
     data.append('api_user', process.env.SITE_ENGINE_API_USER);
-    data.append('api_secret', process.env.SITE_ENGINE_API_USER);
+    data.append('api_secret', process.env.SITE_ENGINE_API_SECRET);
 
     const response = await axios({
       method: 'post',
