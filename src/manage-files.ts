@@ -10,6 +10,7 @@ type ContentTypes = 'jpeg' | 'pdf';
 const NEW_IMAGE_WIDTH = 1240;
 
 export const onFileUpload = functions
+  .region('asia-southeast2')
   .runWith({
     timeoutSeconds: 400,
     memory: '1GB',

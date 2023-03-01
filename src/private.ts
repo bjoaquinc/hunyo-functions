@@ -2,8 +2,9 @@ import * as functions from 'firebase-functions';
 
 import { db } from './index';
 
-export const addCompanyUserRole = functions.firestore
-  .document('companies/{companyId}/users/{userId}')
+export const addCompanyUserRole = functions
+  .region('asia-southeast2')
+  .firestore.document('companies/{companyId}/users/{userId}')
   .onCreate(async (snapshot, context) => {
     const companyId = context.params.companyId;
     const userId = snapshot.id;

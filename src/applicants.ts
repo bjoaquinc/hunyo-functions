@@ -3,8 +3,9 @@ import { dbColRefs, dbDocRefs } from './utils/db';
 import { Applicant } from '../../src/utils/types';
 import { incrementDashboardCounters } from './dashboards';
 
-export const onUpdateApplicant = functions.firestore
-  .document(
+export const onUpdateApplicant = functions
+  .region('asia-southeast2')
+  .firestore.document(
     'companies/{companyId}/dashboards/{dashboardId}/applicants/{applicantId}'
   )
   .onUpdate(async (change, context) => {

@@ -34,8 +34,9 @@ export const updateMessage = async (
   });
 };
 
-export const onCreateMessage = functions.firestore
-  .document('messages/{messageId}')
+export const onCreateMessage = functions
+  .region('asia-southeast2')
+  .firestore.document('messages/{messageId}')
   .onCreate(async (snap, context) => {
     try {
       const message = snap.data() as Message;
@@ -59,8 +60,9 @@ export const onCreateMessage = functions.firestore
     }
   });
 
-export const onUpdateMessage = functions.firestore
-  .document('messages/{messageId}')
+export const onUpdateMessage = functions
+  .region('asia-southeast2')
+  .firestore.document('messages/{messageId}')
   .onUpdate(async (change, context) => {
     const prevMessage = change.before.data() as Message;
     const newMessage = change.after.data() as Message;

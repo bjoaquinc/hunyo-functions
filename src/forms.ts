@@ -14,8 +14,9 @@ import { createMessage } from './messages';
 import { dbDocRefs, dbColRefs } from './utils/db';
 import { Timestamp } from 'firebase/firestore';
 
-export const createForm = functions.firestore
-  .document(
+export const createForm = functions
+  .region('asia-southeast2')
+  .firestore.document(
     // eslint-disable-next-line max-len
     'companies/{companyId}/dashboards/{dashboardId}/applicants/{applicantId}'
   )
@@ -99,8 +100,9 @@ export const updateForm = async (
   });
 };
 
-export const onCreateForm = functions.firestore
-  .document('forms/{formId}')
+export const onCreateForm = functions
+  .region('asia-southeast2')
+  .firestore.document('forms/{formId}')
   .onCreate(async (snapshot, context) => {
     const form = { id: context.params.formId, ...snapshot.data() } as Form & {
       id: string;
@@ -140,8 +142,9 @@ export const onCreateForm = functions.firestore
     await createMessage(message);
   });
 
-export const onApplicantNameChange = functions.firestore
-  .document('forms/{formId}')
+export const onApplicantNameChange = functions
+  .region('asia-southeast2')
+  .firestore.document('forms/{formId}')
   .onUpdate(async (change, context) => {
     const prevForm = change.before.data() as Form;
     const newForm = change.after.data() as Form;

@@ -5,8 +5,9 @@ import { dbDocRefs } from './utils/db';
 import { createApplicant } from './applicants';
 import { Timestamp } from 'firebase/firestore';
 
-export const onPublishDashboard = functions.firestore
-  .document('companies/{companyId}/dashboards/{dashboardId}')
+export const onPublishDashboard = functions
+  .region('asia-southeast2')
+  .firestore.document('companies/{companyId}/dashboards/{dashboardId}')
   .onUpdate(async (change, context) => {
     const newDashboard = change.after.data() as PublishedDashboard;
     const prevDashboard = change.before.data() as DraftDashboard;

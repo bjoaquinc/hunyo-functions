@@ -4,8 +4,9 @@ import * as admin from 'firebase-admin';
 import { db } from './index';
 import { Company, User } from '../../src/utils/types';
 
-export const addUserToCompany = functions.firestore
-  .document('companies/{companyId}/users/{userId}')
+export const addUserToCompany = functions
+  .region('asia-southeast2')
+  .firestore.document('companies/{companyId}/users/{userId}')
   .onCreate(async (snapshot) => {
     const userData = snapshot.data() as User;
     const companyRef = db.collection('companies').doc(userData.company.id);

@@ -18,8 +18,9 @@ import { incrementDashboardCounters } from './dashboards';
 
 // FORM TASKS
 
-export const formTaskManager = functions.firestore
-  .document('forms/{formId}')
+export const formTaskManager = functions
+  .region('asia-southeast2')
+  .firestore.document('forms/{formId}')
   .onUpdate(async (change, context) => {
     const formId = context.params.formId;
     const form = { id: formId, ...change.after.data() } as UpdatedForm & {
@@ -106,8 +107,9 @@ const systemHasCheckedDocPages = (doc: FormDoc) => {
 
 // ADMIN TASKS
 
-export const adminTaskManager = functions.firestore
-  .document('adminChecks/{adminCheckId}')
+export const adminTaskManager = functions
+  .region('asia-southeast2')
+  .firestore.document('adminChecks/{adminCheckId}')
   .onUpdate(async (change, context) => {
     const adminCheckId = context.params.adminCheckId;
     const adminCheck = {
