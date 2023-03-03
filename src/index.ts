@@ -20,7 +20,7 @@ import * as messages from './messages';
 export const { addCompanyUserRole } = privateData;
 export const { addUserToCompany } = denormalize;
 export const { createForm, onApplicantNameChange, onCreateForm } = forms;
-export const { onFileUpload } = manageFiles;
+export const { onImageUpload, onPDFUpload } = manageFiles;
 export const { onPublishDashboard } = dashboards;
 export const { formTaskManager, adminTaskManager } = taskManager;
 export const { onUpdateApplicant } = applicants;

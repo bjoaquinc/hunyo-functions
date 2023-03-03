@@ -9,7 +9,61 @@ import { updateForm } from './forms';
 type ContentTypes = 'jpeg' | 'pdf';
 const NEW_IMAGE_WIDTH = 1240;
 
-export const onFileUpload = functions
+export const onPDFUpload = functions
+  .region('asia-southeast2')
+  .runWith({
+    timeoutSeconds: 400,
+    memory: '1GB',
+  })
+  .storage.object()
+  .onFinalize(async (object, context) => {
+    const filePath = object.name as string;
+    const contentType = object.contentType as string;
+    const metadata = object.metadata as {
+      companyId: string;
+      dashboardId: string;
+      applicantId: string;
+      docId: string;
+      pageId: string;
+      formId: string;
+      format: ContentTypes;
+      submissionCount: string;
+    };
+
+    if (
+      contentType === 'application/pdf' &&
+      filePath.includes('temporary-docs/')
+    ) {
+      // if file is pdf in temporary-docs folder
+      // eslint-disable-next-line max-len
+      const fileName = filePath.split('/').pop() as string;
+      // eslint-disable-next-line max-len
+      const newFilePath = `companies/${metadata.companyId}/dashboards/${metadata.dashboardId}/originals/${metadata.applicantId}/${fileName}.pdf`;
+      const readableStream = getReadableStream(filePath);
+      const writableStream = getWritableStream(newFilePath, {
+        contentType,
+        contentDisposition: `inline; filename=${fileName}.pdf`,
+      });
+
+      readableStream.pipe(writableStream);
+
+      await new Promise((resolve, reject) => {
+        writableStream.on('finish', resolve).on('error', reject);
+      });
+
+      const DEFAULT_SYSTEM_CHECK_STATUS_FOR_PDF = 'Accepted';
+      await updatePageSystemCheck(
+        metadata.formId,
+        metadata.docId,
+        metadata.pageId,
+        DEFAULT_SYSTEM_CHECK_STATUS_FOR_PDF
+      );
+
+      await bucket.file(filePath).delete();
+    }
+  });
+
+export const onImageUpload = functions
   .region('asia-southeast2')
   .runWith({
     timeoutSeconds: 400,
@@ -115,7 +169,7 @@ const manageFixedFile = async (
   const imageProperties = await getImageProperties(imageBuffer, filePath);
   const writableStream = getWritableStream(newFilePath, {
     contentType: getContentType(format),
-    contentDisposition: `inline; filename=${fileName}-fixed.${format}`,
+    contentDisposition: `inline; filename=${fileName}-original.${format}`,
     metadata: {
       ...imageProperties,
     },
@@ -237,11 +291,13 @@ const getWritableStream = (
   metadata: {
     contentType: string;
     contentDisposition: string;
-    metadata: {
-      brightness?: number;
-      sharpness?: number;
-      contrast?: number;
-    };
+    metadata?:
+      | {
+          brightness?: number;
+          sharpness?: number;
+          contrast?: number;
+        }
+      | { [key: string]: string };
   }
 ) => {
   const writableStream = bucket.file(filePath).createWriteStream({
