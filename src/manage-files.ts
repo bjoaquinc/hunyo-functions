@@ -17,33 +17,35 @@ export const onSampleUpload = functions
   })
   .storage.object()
   .onFinalize(async (object, context) => {
+    // FIX INFINITE LOOP
     const filePath = object.name as string;
     const contentType = object.contentType as string;
 
-    if (!filePath.includes('samples/')) {
-      return functions.logger.log('Document is not a sample');
+    if (!filePath.includes('new-samples/')) {
+      return functions.logger.log('Document is not a new sample');
     }
 
     const readableStream = getReadableStream(filePath);
     const fileName = filePath.split('/').pop() as string;
+    const newFilePath = filePath.replace('new-samples', 'samples');
 
     if (contentType.startsWith('image/')) {
       // process image
-      const writableStream = getWritableStream(filePath, {
+      const writableStream = getWritableStream(newFilePath, {
         contentType: 'image/jpeg',
         contentDisposition: `inline; filename=${fileName}.jpeg`,
       });
       const pipeline = toJPEG('resize');
       readableStream.pipe(pipeline).pipe(writableStream);
-
       await new Promise((resolve, reject) => {
         writableStream.on('finish', resolve).on('error', reject);
       });
+      await bucket.file(filePath).delete();
     }
 
     if (contentType === 'application/pdf') {
       // process pdf
-      const writableStream = getWritableStream(filePath, {
+      const writableStream = getWritableStream(newFilePath, {
         contentType: 'application/pdf',
         contentDisposition: `inline; filename=${fileName}.pdf`,
       });
@@ -51,6 +53,7 @@ export const onSampleUpload = functions
       await new Promise((resolve, reject) => {
         writableStream.on('finish', resolve).on('error', reject);
       });
+      await bucket.file(filePath).delete();
     }
     return;
   });
