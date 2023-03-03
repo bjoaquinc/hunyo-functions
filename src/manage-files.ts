@@ -9,6 +9,52 @@ import { updateForm } from './forms';
 type ContentTypes = 'jpeg' | 'pdf';
 const NEW_IMAGE_WIDTH = 1240;
 
+export const onSampleUpload = functions
+  .region('asia-southeast2')
+  .runWith({
+    timeoutSeconds: 400,
+    memory: '1GB',
+  })
+  .storage.object()
+  .onFinalize(async (object, context) => {
+    const filePath = object.filePath as string;
+    const contentType = object.contentType as string;
+
+    if (!filePath.includes('samples/')) {
+      return functions.logger.log('Document is not a sample');
+    }
+
+    const readableStream = getReadableStream(filePath);
+    const fileName = filePath.split('/').pop() as string;
+
+    if (contentType.startsWith('image/')) {
+      // process image
+      const writableStream = getWritableStream(filePath, {
+        contentType: 'image/jpeg',
+        contentDisposition: `inline; filename=${fileName}.jpeg`,
+      });
+      const pipeline = toJPEG('resize');
+      readableStream.pipe(pipeline).pipe(writableStream);
+
+      await new Promise((resolve, reject) => {
+        writableStream.on('finish', resolve).on('error', reject);
+      });
+    }
+
+    if (contentType === 'application/pdf') {
+      // process pdf
+      const writableStream = getWritableStream(filePath, {
+        contentType: 'application/pdf',
+        contentDisposition: `inline; filename=${fileName}.pdf`,
+      });
+      readableStream.pipe(writableStream);
+      await new Promise((resolve, reject) => {
+        writableStream.on('finish', resolve).on('error', reject);
+      });
+    }
+    return;
+  });
+
 export const onPDFUpload = functions
   .region('asia-southeast2')
   .runWith({
