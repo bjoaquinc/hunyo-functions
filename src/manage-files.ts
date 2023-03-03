@@ -17,7 +17,7 @@ export const onSampleUpload = functions
   })
   .storage.object()
   .onFinalize(async (object, context) => {
-    const filePath = object.filePath as string;
+    const filePath = object.name as string;
     const contentType = object.contentType as string;
 
     if (!filePath.includes('samples/')) {
