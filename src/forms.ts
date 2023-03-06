@@ -1,8 +1,6 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import {
-  FormDoc,
-  DashboardDoc,
   Form,
   Applicant,
   Message,
@@ -13,6 +11,7 @@ import { updateApplicant } from './applicants';
 import { createMessage } from './messages';
 import { dbDocRefs, dbColRefs } from './utils/db';
 import { Timestamp } from 'firebase/firestore';
+import { createDocument } from './documents';
 
 export const createForm = functions
   .region('asia-southeast2')
@@ -23,7 +22,6 @@ export const createForm = functions
   .onCreate(async (snapshot, context) => {
     const companyId = context.params.companyId;
     const dashboardId = context.params.dashboardId;
-    const applicantId = context.params.applicantId;
     const companyRef = dbDocRefs.getCompanyRef(companyId);
     const dashboardRef = dbDocRefs.getPublishedDashboardRef(
       companyId,
@@ -44,12 +42,7 @@ export const createForm = functions
       return functions.logger.log(`Incorrect dashboard id ${dashboardId}`);
     }
 
-    const formDocs = turnDashboardDocsIntoFormDocs(
-      dashboardData.docs,
-      applicantId
-    );
-
-    await formsRef.add({
+    const formDocRef = await formsRef.add({
       applicant: {
         id: snapshot.id,
         status: 'Not Submitted',
@@ -68,27 +61,46 @@ export const createForm = functions
         country: dashboardData.country,
         messages: dashboardData.messages,
       },
-      docs: formDocs,
+      isChecked: false,
+    });
+
+    const promises: Promise<void>[] = [];
+    Object.keys(dashboardData.docs).forEach((docName) => {
+      const promise = createDocument(companyId, {
+        createdAt: admin.firestore.FieldValue.serverTimestamp() as Timestamp,
+        formId: formDocRef.id,
+        name: docName,
+        requestedFormat: dashboardData.docs[docName].format,
+        sample: dashboardData.docs[docName].sample,
+        instructions: dashboardData.docs[docName].instructions,
+        dashboardId,
+        applicantId: snapshot.id,
+        companyId,
+        status: 'not-submitted',
+        docNumber: dashboardData.docs[docName].docNumber,
+        totalPages: 0,
+      });
+      promises.push(promise);
     });
   });
 
-const turnDashboardDocsIntoFormDocs = (
-  docs: {
-    [key: string]: DashboardDoc;
-  },
-  applicantId: string
-) => {
-  const formDocs: { [key: string]: FormDoc } = {};
-  Object.keys(docs).forEach((key) => {
-    formDocs[`${applicantId}-${key}`] = {
-      name: key,
-      status: 'Not Submitted',
-      systemTask: null,
-      ...docs[key],
-    };
-  });
-  return formDocs;
-};
+// const turnDashboardDocsIntoFormDocs = (
+//   docs: {
+//     [key: string]: DashboardDoc;
+//   },
+//   applicantId: string
+// ) => {
+//   const formDocs: { [key: string]: FormDoc } = {};
+//   Object.keys(docs).forEach((key) => {
+//     formDocs[`${applicantId}-${key}`] = {
+//       name: key,
+//       status: 'Not Submitted',
+//       systemTask: null,
+//       ...docs[key],
+//     };
+//   });
+//   return formDocs;
+// };
 
 export const updateForm = async (
   formId: string,

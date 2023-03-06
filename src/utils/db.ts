@@ -8,10 +8,11 @@ import {
   PublishedDashboard,
   DraftDashboard,
   AdminCheck,
-  WorkerDoc,
   Action,
   Message,
+  RejectionPages,
 } from '../../../src/utils/types';
+import { ApplicantDocument } from '../../../src/utils/new-types';
 
 export const converter = <T>() => ({
   toFirestore: (data: T) => data,
@@ -24,6 +25,9 @@ export const dbColRefs = {
   companiesRef: db.collection('companies').withConverter(converter<Company>()),
   formsRef: db.collection('forms').withConverter(converter<Form>()),
   messagesRef: db.collection('messages').withConverter(converter<Message>()),
+  rejectionsPagesRef: db
+    .collection('rejections')
+    .withConverter(converter<RejectionPages>()),
   adminChecksRef: db
     .collection('adminChecks')
     .withConverter(converter<AdminCheck>()),
@@ -53,14 +57,12 @@ export const dbColRefs = {
       .doc(dashboardId)
       .collection('applicants')
       .withConverter(converter<Applicant>()),
-  getDocumentsRef: (companyId: string, dashboardId: string) =>
+  getDocumentsRef: (companyId: string) =>
     db
       .collection('companies')
       .doc(companyId)
-      .collection('dashboards')
-      .doc(dashboardId)
       .collection('documents')
-      .withConverter(converter<WorkerDoc>()),
+      .withConverter(converter<ApplicantDocument>()),
 };
 
 export const dbDocRefs = {

@@ -13,7 +13,6 @@ import * as denormalize from './denormalize';
 import * as dashboards from './dashboards';
 import * as forms from './forms';
 import * as manageFiles from './manage-files';
-import * as taskManager from './task-manager';
 import * as applicants from './applicants';
 import * as messages from './messages';
 
@@ -22,6 +21,5 @@ export const { addUserToCompany } = denormalize;
 export const { createForm, onApplicantNameChange, onCreateForm } = forms;
 export const { onImageUpload, onPDFUpload, onSampleUpload } = manageFiles;
 export const { onPublishDashboard } = dashboards;
-export const { formTaskManager, adminTaskManager } = taskManager;
 export const { onUpdateApplicant } = applicants;
 export const { onCreateMessage, onUpdateMessage } = messages;

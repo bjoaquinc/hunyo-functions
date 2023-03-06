@@ -1,14 +1,12 @@
 // import * as functions from 'firebase-functions';
 
 import { dbColRefs } from './utils/db';
-import { WorkerDoc } from '../../src/utils/types';
+import { ApplicantDocument } from '../../src/utils/new-types';
 
-export const createWorkerDocument = async (
+export const createDocument = async (
   companyId: string,
-  dashboardId: string,
-  documentId: string,
-  documentData: WorkerDoc
+  documentData: ApplicantDocument
 ) => {
-  const documentsRef = dbColRefs.getDocumentsRef(companyId, dashboardId);
-  await documentsRef.doc(documentId).set(documentData);
+  const documentsRef = dbColRefs.getDocumentsRef(companyId);
+  await documentsRef.add(documentData);
 };
