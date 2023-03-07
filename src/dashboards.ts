@@ -29,11 +29,13 @@ export const onPublishDashboard = functions
               admin.firestore.FieldValue.serverTimestamp() as Timestamp,
             email: applicantEmail,
             dashboard: {
-              status: 'Not Submitted',
+              status: 'not-submitted',
               id: dashboardId,
             },
             actions: [],
-            docIds: [],
+            totalDocs: 0,
+            adminAcceptedDocs: 0,
+            acceptedDocs: 0,
           }
         );
         promises.push(promise);
