@@ -61,7 +61,7 @@ export const createForm = functions
         country: dashboardData.country,
         messages: dashboardData.messages,
       },
-      isChecked: false,
+      adminCheckDocs: 0,
     });
 
     const promises: Promise<void>[] = [];
@@ -85,6 +85,14 @@ export const createForm = functions
       promises.push(promise);
     });
   });
+
+export const decrementFormAdminCheckDocs = async (formId: string) => {
+  const formRef = dbDocRefs.getFormRef(formId);
+  const decrement = admin.firestore.FieldValue.increment(-1);
+  await formRef.update({
+    adminCheckDocs: decrement,
+  });
+};
 
 // const turnDashboardDocsIntoFormDocs = (
 //   docs: {

@@ -2,6 +2,7 @@ import * as functions from 'firebase-functions';
 import { dbColRefs } from './utils/db';
 import { ApplicantDocument } from '../../src/utils/new-types';
 import { incrementApplicantDocs } from './applicants';
+import { decrementFormAdminCheckDocs } from './forms';
 
 export const updateDocumentStatusToAdminChecked = functions.firestore
   .document('companies/{companyId}/documents/{documentId}')
@@ -28,6 +29,7 @@ export const updateDocumentStatusToAdminChecked = functions.firestore
         'adminAcceptedDocs',
         1
       );
+      await decrementFormAdminCheckDocs(newDoc.formId);
       return functions.logger.log(
         'Successfully updated applicant document status to admin-checked'
       );
