@@ -16,10 +16,8 @@ export const updateDocumentStatusToAdminChecked = functions.firestore
     ) {
       const applicantDocRef = change.after
         .ref as admin.firestore.DocumentReference<ApplicantDocument>;
-      const increment = admin.firestore.FieldValue.increment(1);
       await applicantDocRef.update({
         status: 'admin-checked',
-        adminAcceptedPages: increment,
       });
       return functions.logger.log(
         'Successfully updated applicant document status to admin-checked'
