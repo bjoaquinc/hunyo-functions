@@ -60,7 +60,7 @@ const applicantIsIncomplete = (
   newApplicant: Applicant
 ) => {
   if (
-    newApplicant.dashboard.status === 'not-submitted' &&
+    newApplicant.status === 'not-submitted' &&
     newApplicant.adminAcceptedDocs > 0 &&
     prevApplicant.adminAcceptedDocs === 0
   ) {
@@ -74,13 +74,30 @@ const applicantIsComplete = (
   newApplicant: Applicant
 ) => {
   if (
-    newApplicant.dashboard.status === 'incomplete' &&
+    newApplicant.status === 'incomplete' &&
     newApplicant.totalDocs === newApplicant.acceptedDocs &&
     prevApplicant.totalDocs > prevApplicant.acceptedDocs
   ) {
     return true;
   }
   return false;
+};
+
+export const incrementApplicantDocs = async (
+  refIds: { companyId: string; dashboardId: string; applicantId: string },
+  docsType: 'adminAcceptedDocs' | 'acceptedDocs',
+  incrementNumber: number
+) => {
+  const { companyId, dashboardId, applicantId } = refIds;
+  const applicantRef = dbDocRefs.getApplicantRef(
+    companyId,
+    dashboardId,
+    applicantId
+  );
+  const increment = admin.firestore.FieldValue.increment(incrementNumber);
+  await applicantRef.update({
+    [docsType]: increment,
+  });
 };
 
 export const createApplicant = async (

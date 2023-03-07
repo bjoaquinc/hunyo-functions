@@ -1,24 +1,33 @@
 import * as functions from 'firebase-functions';
-import * as admin from 'firebase-admin';
 import { dbColRefs } from './utils/db';
 import { ApplicantDocument } from '../../src/utils/new-types';
+import { incrementApplicantDocs } from './applicants';
 
 export const updateDocumentStatusToAdminChecked = functions.firestore
   .document('companies/{companyId}/documents/{documentId}')
   .onUpdate(async (change, context) => {
     const oldDoc = change.before.data() as ApplicantDocument;
     const newDoc = change.after.data() as ApplicantDocument;
+    const { companyId, dashboardId, applicantId } = newDoc;
 
     if (
       newDoc.status === 'submitted' &&
       newDoc.totalPages === newDoc.adminAcceptedPages &&
-      oldDoc.totalPages > newDoc.adminAcceptedPages
+      oldDoc.totalPages > oldDoc.adminAcceptedPages
     ) {
-      const applicantDocRef = change.after
-        .ref as admin.firestore.DocumentReference<ApplicantDocument>;
+      const applicantDocRef = change.after.ref;
       await applicantDocRef.update({
         status: 'admin-checked',
       });
+      await incrementApplicantDocs(
+        {
+          companyId,
+          dashboardId,
+          applicantId,
+        },
+        'adminAcceptedDocs',
+        1
+      );
       return functions.logger.log(
         'Successfully updated applicant document status to admin-checked'
       );
