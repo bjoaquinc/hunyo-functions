@@ -17,6 +17,7 @@ export const onPublishDashboard = functions
       const companyId = context.params.companyId;
       const dashboardId = context.params.dashboardId;
       const applicants = newDashboard.applicants;
+      const TOTAL_DOCS = Object.keys(newDashboard.docs).length;
       const promises: Promise<void>[] = [];
       applicants.forEach((applicantEmail) => {
         const promise = createApplicant(
@@ -32,7 +33,7 @@ export const onPublishDashboard = functions
               id: dashboardId,
             },
             status: 'not-submitted',
-            totalDocs: 0,
+            totalDocs: TOTAL_DOCS,
             adminAcceptedDocs: 0,
             acceptedDocs: 0,
           }

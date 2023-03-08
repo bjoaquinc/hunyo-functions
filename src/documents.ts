@@ -43,6 +43,45 @@ export const updateDocumentStatusToAdminChecked = functions.firestore
     }
   });
 
+export const updateDocumentStatusToAccepted = functions
+  .region('asia-southeast2')
+  .firestore.document('companies/{companyId}/documents/{documentId}')
+  .onUpdate(async (change, context) => {
+    const prevDoc = change.before.data() as ApplicantDocument;
+    const newDoc = change.after.data() as ApplicantDocument;
+
+    if (
+      newDoc.status === 'admin-checked' &&
+      newDoc.totalPages === newDoc.acceptedPages &&
+      prevDoc.totalPages > prevDoc.acceptedPages
+    ) {
+      const { companyId, dashboardId, applicantId } = newDoc;
+      const applicantDocRef = change.after.ref;
+      await applicantDocRef.update({
+        status: 'accepted',
+      });
+      await incrementApplicantDocs(
+        {
+          companyId,
+          dashboardId,
+          applicantId,
+        },
+        'acceptedDocs',
+        1
+      );
+      // decrement action that was completed
+      await incrementDashboardCounters(
+        companyId,
+        dashboardId,
+        'actionsCount',
+        -1
+      );
+      return functions.logger.log(
+        'Successfully updated applicant document status to accepted'
+      );
+    }
+  });
+
 export const createDocument = async (
   companyId: string,
   documentData: ApplicantDocument

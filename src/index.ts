@@ -25,4 +25,7 @@ export const { onPublishDashboard } = dashboards;
 export const { onCreateMessage, onUpdateMessage } = messages;
 export const { updateApplicantStatusAndIncrementDashboardCounters } =
   applicants;
-export const { updateDocumentStatusToAdminChecked } = documents;
+export const {
+  updateDocumentStatusToAdminChecked,
+  updateDocumentStatusToAccepted,
+} = documents;
