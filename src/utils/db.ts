@@ -7,8 +7,6 @@ import {
   Form,
   PublishedDashboard,
   DraftDashboard,
-  AdminCheck,
-  Action,
   Message,
   RejectionPages,
 } from '../../../src/utils/types';
@@ -28,21 +26,12 @@ export const dbColRefs = {
   rejectionsPagesRef: db
     .collection('rejections')
     .withConverter(converter<RejectionPages>()),
-  adminChecksRef: db
-    .collection('adminChecks')
-    .withConverter(converter<AdminCheck>()),
   getUsersRef: (companyId: string) =>
     db
       .collection('companies')
       .doc(companyId)
       .collection('users')
       .withConverter(converter<User>()),
-  getActionsRef: (companyId: string) =>
-    db
-      .collection('companies')
-      .doc(companyId)
-      .collection('actions')
-      .withConverter(converter<Action>()),
   getPublishedDashboardsRef: (companyId: string) =>
     db
       .collection('companies')
@@ -78,11 +67,6 @@ export const dbDocRefs = {
       .collection('messages')
       .doc(messageId)
       .withConverter(converter<Message>()),
-  getAdminCheckRef: (adminCheckId: string) =>
-    db
-      .collection('adminChecks')
-      .doc(adminCheckId)
-      .withConverter(converter<AdminCheck>()),
   getUserRef: (companyId: string, userId: string) =>
     db
       .collection('companies')

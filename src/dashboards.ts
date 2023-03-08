@@ -31,7 +31,6 @@ export const onPublishDashboard = functions
             dashboard: {
               id: dashboardId,
             },
-            actions: [],
             status: 'not-submitted',
             totalDocs: 0,
             adminAcceptedDocs: 0,

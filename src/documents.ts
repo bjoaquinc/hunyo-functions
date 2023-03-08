@@ -3,6 +3,7 @@ import { dbColRefs } from './utils/db';
 import { ApplicantDocument } from '../../src/utils/new-types';
 import { incrementApplicantDocs } from './applicants';
 import { decrementFormAdminCheckDocs } from './forms';
+import { incrementDashboardCounters } from './dashboards';
 
 export const updateDocumentStatusToAdminChecked = functions.firestore
   .document('companies/{companyId}/documents/{documentId}')
@@ -27,6 +28,12 @@ export const updateDocumentStatusToAdminChecked = functions.firestore
           applicantId,
         },
         'adminAcceptedDocs',
+        1
+      );
+      await incrementDashboardCounters(
+        companyId,
+        dashboardId,
+        'actionsCount',
         1
       );
       await decrementFormAdminCheckDocs(newDoc.formId);

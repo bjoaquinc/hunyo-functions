@@ -416,8 +416,9 @@ const toPDF = (
     height: number;
   }
 ) => {
-  const doc = new PDFDocument();
-  doc.page.size = 'A4';
+  const doc = new PDFDocument({
+    size: 'A4',
+  });
   doc.page.layout = 'fit';
 
   const imageAspecRatio = dimensions.height / dimensions.width;
