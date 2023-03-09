@@ -29,4 +29,5 @@ export const { updateApplicantStatusAndIncrementDashboardCounters } =
 export const {
   updateDocumentStatusToAdminChecked,
   updateDocumentStatusToAccepted,
+  toggleStatusNotApplicable,
 } = documents;

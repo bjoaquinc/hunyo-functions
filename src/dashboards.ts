@@ -47,6 +47,12 @@ export const onPublishDashboard = functions
         'applicantsCount',
         applicants.length
       );
+      await incrementDashboardCounters(
+        companyId,
+        dashboardId,
+        'incompleteApplicantsCount',
+        applicants.length
+      );
     }
   });
 

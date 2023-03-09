@@ -21,12 +21,6 @@ export const updateApplicantStatusAndIncrementDashboardCounters = functions
       await applicantRef.update({
         status: 'incomplete',
       });
-      await incrementDashboardCounters(
-        companyId,
-        dashboardId,
-        'incompleteApplicantsCount',
-        1
-      );
       return functions.logger.log(
         'Successfully updated applicant status to incomplete'
       );

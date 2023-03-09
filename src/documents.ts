@@ -1,5 +1,6 @@
 import * as functions from 'firebase-functions';
-import { dbColRefs } from './utils/db';
+import * as admin from 'firebase-admin';
+import { dbColRefs, dbDocRefs } from './utils/db';
 import { ApplicantDocument } from '../../src/utils/new-types';
 import { incrementApplicantDocs } from './applicants';
 import { decrementFormAdminCheckDocs } from './forms';
@@ -79,6 +80,43 @@ export const updateDocumentStatusToAccepted = functions
       return functions.logger.log(
         'Successfully updated applicant document status to accepted'
       );
+    }
+  });
+
+export const toggleStatusNotApplicable = functions
+  .region('asia-southeast2')
+  .firestore.document('companies/{companyId}/documents/{documentId}')
+  .onUpdate(async (change, context) => {
+    const prevDoc = change.before.data() as ApplicantDocument;
+    const newDoc = change.after.data() as ApplicantDocument;
+    const increment = admin.firestore.FieldValue.increment(1);
+    const decrement = admin.firestore.FieldValue.increment(-1);
+    const { companyId, dashboardId, applicantId } = newDoc;
+
+    if (
+      newDoc.status === 'not-applicable' &&
+      prevDoc.status !== 'not-applicable'
+    ) {
+      const applicantRef = dbDocRefs.getApplicantRef(
+        companyId,
+        dashboardId,
+        applicantId
+      );
+      await applicantRef.update({
+        totalDocs: decrement,
+      });
+    } else if (
+      newDoc.status !== 'not-applicable' &&
+      prevDoc.status === 'not-applicable'
+    ) {
+      const applicantRef = dbDocRefs.getApplicantRef(
+        companyId,
+        dashboardId,
+        applicantId
+      );
+      await applicantRef.update({
+        totalDocs: increment,
+      });
     }
   });
 
