@@ -9,6 +9,47 @@ import { updateForm } from './forms';
 type ContentTypes = 'jpeg' | 'pdf';
 const NEW_IMAGE_WIDTH = 1240;
 
+export const onPageAccepted = functions
+  .region('asia-southeast2')
+  .runWith({
+    timeoutSeconds: 400,
+    memory: '1GB',
+  })
+  .storage.object()
+  .onMetadataUpdate(async (object, context) => {
+    const metadata = object.metadata as {
+      status: 'accepted' | 'rejected';
+      companyId: string;
+      dashboardId: string;
+      applicantId: string;
+    };
+    const filePath = object.name as string;
+    if (metadata && metadata.status === 'accepted') {
+      const { companyId, dashboardId, applicantId } = metadata;
+      const contentType = object.contentType as string;
+      const fileName = filePath.split('/').pop() as string;
+      const readableStream = getReadableStream(filePath);
+      const newFilePath = getNewFilePath(
+        'companies',
+        companyId,
+        'dashboards',
+        dashboardId,
+        'accepted',
+        applicantId,
+        `${fileName}`
+      );
+      const writableStream = getWritableStream(newFilePath, {
+        contentType,
+      });
+
+      readableStream.pipe(writableStream);
+
+      await new Promise((resolve, reject) => {
+        writableStream.on('finish', resolve).on('error', reject);
+      });
+    }
+  });
+
 export const onSampleUpload = functions
   .region('asia-southeast2')
   .runWith({
@@ -17,7 +58,6 @@ export const onSampleUpload = functions
   })
   .storage.object()
   .onFinalize(async (object, context) => {
-    // FIX INFINITE LOOP
     const filePath = object.name as string;
     const contentType = object.contentType as string;
 
@@ -339,7 +379,7 @@ const getWritableStream = (
   filePath: string,
   metadata: {
     contentType: string;
-    contentDisposition: string;
+    contentDisposition?: string;
     metadata?:
       | {
           brightness?: number;

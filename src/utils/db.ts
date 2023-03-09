@@ -8,6 +8,7 @@ import {
   PublishedDashboard,
   DraftDashboard,
   Message,
+  AcceptedPage,
   RejectionPages,
 } from '../../../src/utils/types';
 import { ApplicantDocument } from '../../../src/utils/new-types';
@@ -23,6 +24,9 @@ export const dbColRefs = {
   companiesRef: db.collection('companies').withConverter(converter<Company>()),
   formsRef: db.collection('forms').withConverter(converter<Form>()),
   messagesRef: db.collection('messages').withConverter(converter<Message>()),
+  acceptedPagesRef: db
+    .collection('acceptedPages')
+    .withConverter(converter<AcceptedPage>()),
   rejectionsPagesRef: db
     .collection('rejections')
     .withConverter(converter<RejectionPages>()),
