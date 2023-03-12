@@ -18,15 +18,15 @@ export const onImageStatusUpdated = functions
   .onMetadataUpdate(async (object, context) => {
     const metadata = object.metadata as {
       status: 'accepted' | 'rejected';
+      updatedName: string;
       companyId: string;
       dashboardId: string;
       applicantId: string;
     };
     const filePath = object.name as string;
     if (metadata && metadata.status === 'accepted') {
-      const { companyId, dashboardId, applicantId } = metadata;
+      const { companyId, dashboardId, applicantId, updatedName } = metadata;
       const contentType = object.contentType as string;
-      const fileName = filePath.split('/').pop() as string;
       const readableStream = getReadableStream(filePath);
       const newFilePath = getNewFilePath(
         'companies',
@@ -35,7 +35,7 @@ export const onImageStatusUpdated = functions
         dashboardId,
         'accepted',
         applicantId,
-        `${fileName}`
+        updatedName
       );
       const writableStream = getWritableStream(newFilePath, {
         contentType,
@@ -46,12 +46,12 @@ export const onImageStatusUpdated = functions
       await new Promise((resolve, reject) => {
         writableStream.on('finish', resolve).on('error', reject);
       });
+      functions.logger.log('Successfully moved file to accepted folder');
     }
 
     if (metadata && metadata.status === 'rejected') {
-      const { companyId, dashboardId, applicantId } = metadata;
+      const { companyId, dashboardId, applicantId, updatedName } = metadata;
       const contentType = object.contentType as string;
-      const fileName = filePath.split('/').pop() as string;
       const readableStream = getReadableStream(filePath);
       const newFilePath = getNewFilePath(
         'companies',
@@ -60,7 +60,7 @@ export const onImageStatusUpdated = functions
         dashboardId,
         'rejected',
         applicantId,
-        `${fileName}`
+        updatedName
       );
       const writableStream = getWritableStream(newFilePath, {
         contentType,
@@ -71,6 +71,7 @@ export const onImageStatusUpdated = functions
       await new Promise((resolve, reject) => {
         writableStream.on('finish', resolve).on('error', reject);
       });
+      functions.logger.log('Successfully moved file to rejected folder');
     }
   });
 
