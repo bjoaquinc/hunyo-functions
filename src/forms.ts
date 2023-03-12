@@ -86,13 +86,13 @@ export const createForm = functions
     });
   });
 
-export const decrementFormAdminCheckDocs = async (formId: string) => {
-  const formRef = dbDocRefs.getFormRef(formId);
-  const decrement = admin.firestore.FieldValue.increment(-1);
-  await formRef.update({
-    adminCheckDocs: decrement,
-  });
-};
+// export const decrementFormAdminCheckDocs = async (formId: string) => {
+//   const formRef = dbDocRefs.getFormRef(formId);
+//   const decrement = admin.firestore.FieldValue.increment(-1);
+//   await formRef.update({
+//     adminCheckDocs: decrement,
+//   });
+// };
 
 // const turnDashboardDocsIntoFormDocs = (
 //   docs: {

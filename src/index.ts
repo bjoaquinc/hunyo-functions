@@ -30,4 +30,5 @@ export const {
   updateDocumentStatusToAdminChecked,
   updateDocumentStatusToAccepted,
   toggleStatusNotApplicable,
+  decrementUserActionsCount,
 } = documents;

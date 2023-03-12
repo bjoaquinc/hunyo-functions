@@ -5,7 +5,6 @@ import PDFDocument from 'pdfkit';
 import axios from 'axios';
 const bucket = admin.storage().bucket();
 import FormData from 'form-data';
-import { updateForm } from './forms';
 type ContentTypes = 'jpeg' | 'pdf';
 const NEW_IMAGE_WIDTH = 1240;
 
@@ -113,7 +112,6 @@ export const onPDFUpload = functions
       dashboardId: string;
       applicantId: string;
       docId: string;
-      pageId: string;
       formId: string;
       format: ContentTypes;
       submissionCount: string;
@@ -140,14 +138,6 @@ export const onPDFUpload = functions
         writableStream.on('finish', resolve).on('error', reject);
       });
 
-      const DEFAULT_SYSTEM_CHECK_STATUS_FOR_PDF = 'Accepted';
-      await updatePageSystemCheck(
-        metadata.formId,
-        metadata.docId,
-        metadata.pageId,
-        DEFAULT_SYSTEM_CHECK_STATUS_FOR_PDF
-      );
-
       await bucket.file(filePath).delete();
     }
   });
@@ -168,7 +158,6 @@ export const onImageUpload = functions
       dashboardId: string;
       applicantId: string;
       docId: string;
-      pageId: string;
       formId: string;
       format: ContentTypes;
       submissionCount: string;
@@ -182,16 +171,7 @@ export const onImageUpload = functions
       return functions.logger.log('This is not an image');
     }
 
-    const {
-      companyId,
-      dashboardId,
-      applicantId,
-      formId,
-      docId,
-      pageId,
-      format,
-      submissionCount,
-    } = metadata;
+    const { companyId, dashboardId, applicantId, format } = metadata;
     const readableStream = getReadableStream(filePath);
     const resizedImage = await readableStream.pipe(toJPEG('resize')).toBuffer();
     const imageProperties = await getImageProperties(resizedImage, filePath);
@@ -230,16 +210,8 @@ export const onImageUpload = functions
         imageProperties
       )
     );
-    const results = await Promise.all(promises);
+    await Promise.all(promises);
     await bucket.file(filePath).delete();
-    const fixedImageProperties = results[0];
-    if (fixedImageProperties) {
-      const systemCheckStatus = acceptOrRejectImageQuality(
-        fixedImageProperties,
-        parseInt(submissionCount)
-      );
-      await updatePageSystemCheck(formId, docId, pageId, systemCheckStatus);
-    }
 
     return functions.logger.log('Successfully processed image');
   });
@@ -327,46 +299,6 @@ const getNewFilePath = (...keys: string[]) => {
     }
   });
   return filePath;
-};
-
-const acceptOrRejectImageQuality = (
-  imageProperties: {
-    brightness: number;
-    sharpness: number;
-    contrast: number;
-  },
-  submissionCount: number
-): 'Accepted' | 'Rejected' => {
-  const MINIMUM_VIABLE_SHARPNESS = 0.9;
-  const MINIMUM_VIABLE_BRIGHTNESS = 0.3;
-  const MINIMUM_VIABLE_CONTRAST = 0.75;
-  const MAXIMUM_REJECTION_COUNT = 3;
-  const { brightness, sharpness, contrast } = imageProperties;
-  const imagePassesQualityCheck =
-    brightness > MINIMUM_VIABLE_BRIGHTNESS &&
-    sharpness > MINIMUM_VIABLE_SHARPNESS &&
-    contrast > MINIMUM_VIABLE_CONTRAST;
-  const overRejectedLimit = submissionCount > MAXIMUM_REJECTION_COUNT;
-  let IMAGE_CHECK_STATUS: 'Accepted' | 'Rejected' | '' = '';
-
-  if (imagePassesQualityCheck || overRejectedLimit) {
-    IMAGE_CHECK_STATUS = 'Accepted';
-  } else {
-    IMAGE_CHECK_STATUS = 'Rejected';
-  }
-
-  return IMAGE_CHECK_STATUS;
-};
-
-const updatePageSystemCheck = async (
-  formId: string,
-  docId: string,
-  pageId: string,
-  systemCheckStatus: 'Accepted' | 'Rejected'
-) => {
-  await updateForm(formId, {
-    [`docs.${docId}.pages.${pageId}.systemCheckStatus`]: systemCheckStatus,
-  });
 };
 
 const getReadableStream = (filePath: string) => {

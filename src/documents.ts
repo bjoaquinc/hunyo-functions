@@ -3,7 +3,6 @@ import * as admin from 'firebase-admin';
 import { dbColRefs, dbDocRefs } from './utils/db';
 import { ApplicantDocument } from '../../src/utils/new-types';
 import { incrementApplicantDocs } from './applicants';
-import { decrementFormAdminCheckDocs } from './forms';
 import { incrementDashboardCounters } from './dashboards';
 
 export const updateDocumentStatusToAdminChecked = functions.firestore
@@ -37,9 +36,29 @@ export const updateDocumentStatusToAdminChecked = functions.firestore
         'actionsCount',
         1
       );
-      await decrementFormAdminCheckDocs(newDoc.formId);
       return functions.logger.log(
         'Successfully updated applicant document status to admin-checked'
+      );
+    }
+  });
+
+export const decrementUserActionsCount = functions
+  .region('asia-southeast2')
+  .firestore.document('companies/{companyId}/documents/{documentId}')
+  .onUpdate(async (change, context) => {
+    const prevDoc = change.before.data() as ApplicantDocument;
+    const newDoc = change.after.data() as ApplicantDocument;
+
+    if (
+      prevDoc.status === 'admin-checked' &&
+      (newDoc.status === 'accepted' || newDoc.status === 'rejected')
+    ) {
+      const { companyId, dashboardId } = newDoc;
+      await incrementDashboardCounters(
+        companyId,
+        dashboardId,
+        'actionsCount',
+        -1
       );
     }
   });
@@ -69,13 +88,6 @@ export const updateDocumentStatusToAccepted = functions
         },
         'acceptedDocs',
         1
-      );
-      // decrement action that was completed
-      await incrementDashboardCounters(
-        companyId,
-        dashboardId,
-        'actionsCount',
-        -1
       );
       return functions.logger.log(
         'Successfully updated applicant document status to accepted'
