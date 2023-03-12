@@ -20,8 +20,12 @@ import * as documents from './documents';
 export const { addCompanyUserRole } = privateData;
 export const { addUserToCompany } = denormalize;
 export const { createForm, onApplicantNameChange, onCreateForm } = forms;
-export const { onImageUpload, onPDFUpload, onSampleUpload, onPageAccepted } =
-  manageFiles;
+export const {
+  onImageUpload,
+  onPDFUpload,
+  onSampleUpload,
+  onImageStatusUpdated,
+} = manageFiles;
 export const { onPublishDashboard } = dashboards;
 export const { onCreateMessage, onUpdateMessage } = messages;
 export const { updateApplicantStatusAndIncrementDashboardCounters } =
