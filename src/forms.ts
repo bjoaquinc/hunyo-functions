@@ -71,6 +71,7 @@ export const createForm = functions
         formId: formDocRef.id,
         name: docName,
         requestedFormat: dashboardData.docs[docName].format,
+        isRequired: dashboardData.docs[docName].isRequired,
         sample: dashboardData.docs[docName].sample,
         instructions: dashboardData.docs[docName].instructions,
         dashboardId,

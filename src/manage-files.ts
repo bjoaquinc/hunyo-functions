@@ -8,6 +8,77 @@ import FormData from 'form-data';
 type ContentTypes = 'jpeg' | 'pdf';
 const NEW_IMAGE_WIDTH = 1240;
 
+export const onImagePropertyUpdated = functions
+  .region('asia-southeast2')
+  .runWith({
+    timeoutSeconds: 400,
+    memory: '1GB',
+    secrets: ['SITE_ENGINE_API_SECRET', 'SITE_ENGINE_API_USER'],
+  })
+  .storage.object()
+  .onMetadataUpdate(async (object, context) => {
+    const metadata = object.metadata as {
+      property: 'removeBrightness';
+      format: 'jpeg' | 'pdf';
+      companyId: string;
+      dashboardId: string;
+      applicantId: string;
+    };
+    const filePath = object.name as string;
+    const fileName = filePath.split('/').pop() as string;
+    const newFileName = fileName.split('.')[0] + `.${metadata.format}`;
+    functions.logger.log('metadata', metadata, 'filePath', filePath);
+    if (metadata && metadata.property === 'removeBrightness') {
+      const { companyId, dashboardId, applicantId } = metadata;
+      const readableStream = getReadableStream(filePath);
+      const newFilePath = getNewFilePath(
+        'companies',
+        companyId,
+        'dashboards',
+        dashboardId,
+        'fixed',
+        applicantId,
+        newFileName
+      );
+
+      const buffer = await readableStream
+        .pipe(
+          toJPEG('fix', {
+            removeBrightness: true,
+          })
+        )
+        .toBuffer();
+      const imageProperties = await getImageProperties(buffer, filePath);
+
+      const writableStream = getWritableStream(newFilePath, {
+        contentType:
+          metadata.format === 'pdf' ? 'application/pdf' : 'image/jpeg',
+        contentDisposition: 'inline',
+        metadata: {
+          ...imageProperties,
+        },
+      });
+
+      if (metadata.format === 'pdf') {
+        const imageMetadata = await sharp(buffer).metadata();
+        const width = imageMetadata.width;
+        const height = imageMetadata.height;
+
+        if (!width || !height) return;
+
+        toPDF(buffer, {
+          width,
+          height,
+        }).pipe(writableStream);
+
+        await new Promise((resolve, reject) => {
+          writableStream.on('finish', resolve).on('error', reject);
+        });
+        functions.logger.log('Successfully updated image property');
+      }
+    }
+  });
+
 export const onImageStatusUpdated = functions
   .region('asia-southeast2')
   .runWith({
@@ -386,7 +457,12 @@ const getImageProperties = async (image: Buffer, imagePath: string) => {
   }
 };
 
-const toJPEG = (task: 'resize' | 'fix') => {
+const toJPEG = (
+  task: 'resize' | 'fix',
+  options?: {
+    removeBrightness?: boolean;
+  }
+) => {
   const pipeline = sharp();
   const BRIGHTNESS_ADJUSTMENT = 1.2;
   if (task === 'resize') {
@@ -395,15 +471,12 @@ const toJPEG = (task: 'resize' | 'fix') => {
       .rotate() // Fix image orientation based on image EXIF data
       .resize(NEW_IMAGE_WIDTH)
       .jpeg({ mozjpeg: true });
+  } else if (options && options.removeBrightness) {
+    return pipeline.removeAlpha().flatten().sharpen().normalise();
   } else {
-    return pipeline
-      .removeAlpha()
-      .flatten()
-      .sharpen()
-      .modulate({
-        brightness: BRIGHTNESS_ADJUSTMENT,
-      })
-      .normalise();
+    return pipeline.modulate({
+      brightness: BRIGHTNESS_ADJUSTMENT,
+    });
   }
 };
 

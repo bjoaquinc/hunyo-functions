@@ -25,6 +25,7 @@ export const {
   onPDFUpload,
   onSampleUpload,
   onImageStatusUpdated,
+  onImagePropertyUpdated,
 } = manageFiles;
 export const { onPublishDashboard } = dashboards;
 export const { onCreateMessage, onUpdateMessage } = messages;

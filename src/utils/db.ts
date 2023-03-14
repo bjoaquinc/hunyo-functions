@@ -11,7 +11,7 @@ import {
   AcceptedPage,
   RejectionPages,
 } from '../../../src/utils/types';
-import { ApplicantDocument } from '../../../src/utils/new-types';
+import { ApplicantDocument, ApplicantPage } from '../../../src/utils/new-types';
 
 export const converter = <T>() => ({
   toFirestore: (data: T) => data,
@@ -27,7 +27,7 @@ export const dbColRefs = {
   acceptedPagesRef: db
     .collection('acceptedPages')
     .withConverter(converter<AcceptedPage>()),
-  rejectionsPagesRef: db
+  rejectedPagesRef: db
     .collection('rejections')
     .withConverter(converter<RejectionPages>()),
   getUsersRef: (companyId: string) =>
@@ -56,6 +56,12 @@ export const dbColRefs = {
       .doc(companyId)
       .collection('documents')
       .withConverter(converter<ApplicantDocument>()),
+  getPagesRef: (companyId: string) =>
+    db
+      .collection('companies')
+      .doc(companyId)
+      .collection('pages')
+      .withConverter(converter<ApplicantPage>()),
 };
 
 export const dbDocRefs = {
