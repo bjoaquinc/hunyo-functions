@@ -270,9 +270,10 @@ export const onImageUpload = functions
     }
 
     const { companyId, dashboardId, applicantId, format, angle } = metadata;
-    functions.logger.log('Angle', angle);
     const readableStream = getReadableStream(filePath);
-    const resizedImage = await readableStream.pipe(toJPEG('resize')).toBuffer();
+    const resizedImage = await readableStream
+      .pipe(toJPEG('resize', { angle }))
+      .toBuffer();
     const imageProperties = await getImageProperties(resizedImage, filePath);
     const fileName = filePath.split('/').pop() as string;
     const originalFilePath = getNewFilePath(
@@ -308,7 +309,8 @@ export const onImageUpload = functions
         originalFilePath,
         fileName,
         'jpeg',
-        imageProperties
+        imageProperties,
+        angle
       )
     );
     await Promise.all(promises);
@@ -366,7 +368,8 @@ const manageOriginalFile = async (
   newFilePath: string,
   fileName: string,
   format: ContentTypes,
-  imageProperties?: FilteredImageProperties
+  imageProperties?: FilteredImageProperties,
+  angle?: '0' | '90' | '180' | '270'
 ) => {
   const writableStream = getWritableStream(newFilePath, {
     contentType: getContentType(format),
@@ -376,7 +379,11 @@ const manageOriginalFile = async (
     },
   });
 
-  sharp(image).pipe(writableStream);
+  const pipeline = sharp(image);
+  if (angle !== undefined) {
+    pipeline.rotate(parseInt(angle));
+  }
+  pipeline.pipe(writableStream);
 
   await new Promise((resolve, reject) => {
     writableStream.on('finish', resolve).on('error', reject);
@@ -472,20 +479,23 @@ const toJPEG = (
   const pipeline = sharp();
   const BRIGHTNESS_ADJUSTMENT = 1.2;
   if (task === 'resize') {
-    return pipeline
+    pipeline
       .withMetadata() // Keep original metadata of image
-      .rotate() // Fix image orientation based on image EXIF data
-      .resize(NEW_IMAGE_WIDTH)
-      .jpeg({ mozjpeg: true });
+      .rotate(); // Fix image orientation based on image EXIF data
+
+    if (options?.angle) {
+      functions.logger.log(options.angle);
+    }
+
+    pipeline.resize(NEW_IMAGE_WIDTH).jpeg({ mozjpeg: true });
+
+    return pipeline;
   } else {
     pipeline.removeAlpha().flatten().sharpen().normalise();
     if (!options?.removeBrightness) {
       pipeline.modulate({
         brightness: BRIGHTNESS_ADJUSTMENT,
       });
-    }
-    if (options?.angle) {
-      functions.logger.log(options.angle);
     }
     if (options?.angle) {
       pipeline.rotate(parseInt(options.angle));
