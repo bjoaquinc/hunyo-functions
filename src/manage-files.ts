@@ -258,6 +258,7 @@ export const onImageUpload = functions
       formId: string;
       format: ContentTypes;
       submissionCount: string;
+      angle?: '0' | '90' | '180' | '270';
     };
 
     if (!filePath.includes('temporary-docs/')) {
@@ -268,7 +269,8 @@ export const onImageUpload = functions
       return functions.logger.log('This is not an image');
     }
 
-    const { companyId, dashboardId, applicantId, format } = metadata;
+    const { companyId, dashboardId, applicantId, format, angle } = metadata;
+    functions.logger.log('Angle', angle);
     const readableStream = getReadableStream(filePath);
     const resizedImage = await readableStream.pipe(toJPEG('resize')).toBuffer();
     const imageProperties = await getImageProperties(resizedImage, filePath);
@@ -297,7 +299,9 @@ export const onImageUpload = functions
       contrast: number;
     }>[] = [];
 
-    promises.push(manageFixedFile(fileName, filePath, fixedFilePath, format));
+    promises.push(
+      manageFixedFile(fileName, filePath, fixedFilePath, format, angle)
+    );
     promises.push(
       manageOriginalFile(
         resizedImage,
@@ -317,12 +321,13 @@ const manageFixedFile = async (
   fileName: string,
   filePath: string,
   newFilePath: string,
-  format: ContentTypes
+  format: ContentTypes,
+  angle?: '0' | '90' | '180' | '270'
 ) => {
   const readableStream = getReadableStream(filePath);
   const imageBuffer = await readableStream
     .pipe(toJPEG('resize'))
-    .pipe(toJPEG('fix'))
+    .pipe(toJPEG('fix', { angle }))
     .toBuffer();
   const imageProperties = await getImageProperties(imageBuffer, filePath);
   const writableStream = getWritableStream(newFilePath, {
@@ -461,6 +466,7 @@ const toJPEG = (
   task: 'resize' | 'fix',
   options?: {
     removeBrightness?: boolean;
+    angle?: '0' | '90' | '180' | '270';
   }
 ) => {
   const pipeline = sharp();
@@ -471,12 +477,20 @@ const toJPEG = (
       .rotate() // Fix image orientation based on image EXIF data
       .resize(NEW_IMAGE_WIDTH)
       .jpeg({ mozjpeg: true });
-  } else if (options && options.removeBrightness) {
-    return pipeline.removeAlpha().flatten().sharpen().normalise();
   } else {
-    return pipeline.modulate({
-      brightness: BRIGHTNESS_ADJUSTMENT,
-    });
+    pipeline.removeAlpha().flatten().sharpen().normalise();
+    if (!options?.removeBrightness) {
+      pipeline.modulate({
+        brightness: BRIGHTNESS_ADJUSTMENT,
+      });
+    }
+    if (options?.angle) {
+      functions.logger.log(options.angle);
+    }
+    if (options?.angle) {
+      pipeline.rotate(parseInt(options.angle));
+    }
+    return pipeline;
   }
 };
 
