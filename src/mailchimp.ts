@@ -62,6 +62,10 @@ const emailTemplates = {
               name: 'COMPANY_NAME',
               content: template.data.companyName,
             },
+            {
+              name: 'COMPANY_DEADLINE',
+              content: template.data.companyDeadline,
+            },
           ],
           ...message,
         },

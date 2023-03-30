@@ -12,6 +12,7 @@ import { createMessage } from './messages';
 import { dbDocRefs, dbColRefs } from './utils/db';
 import { Timestamp } from 'firebase/firestore';
 import { createDocument } from './documents';
+import { DateTime } from 'luxon';
 
 export const createForm = functions
   .region('asia-southeast2')
@@ -87,32 +88,6 @@ export const createForm = functions
     });
   });
 
-// export const decrementFormAdminCheckDocs = async (formId: string) => {
-//   const formRef = dbDocRefs.getFormRef(formId);
-//   const decrement = admin.firestore.FieldValue.increment(-1);
-//   await formRef.update({
-//     adminCheckDocs: decrement,
-//   });
-// };
-
-// const turnDashboardDocsIntoFormDocs = (
-//   docs: {
-//     [key: string]: DashboardDoc;
-//   },
-//   applicantId: string
-// ) => {
-//   const formDocs: { [key: string]: FormDoc } = {};
-//   Object.keys(docs).forEach((key) => {
-//     formDocs[`${applicantId}-${key}`] = {
-//       name: key,
-//       status: 'Not Submitted',
-//       systemTask: null,
-//       ...docs[key],
-//     };
-//   });
-//   return formDocs;
-// };
-
 export const updateForm = async (
   formId: string,
   formData: { [key: string]: Partial<Form> | any }
@@ -141,11 +116,18 @@ export const onCreateForm = functions
     } else {
       FORM_LINK = `${DEV_URL}/applicant/forms/${form.id}`;
     }
+    const dateTime = DateTime.fromMillis(dashboard.deadline.toMillis());
+    const deadline = dateTime.toLocaleString({
+      month: 'long',
+      day: '2-digit',
+      year: 'numeric',
+    });
     const template: SendApplicantDocumentRequestTemplate = {
       name: 'Applicant Documents Request',
       data: {
         formLink: FORM_LINK,
         companyName: company.name,
+        companyDeadline: deadline,
       },
     };
     const metadata: MessageMetadata = {
