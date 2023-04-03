@@ -5,8 +5,107 @@ import PDFDocument from 'pdfkit';
 import axios from 'axios';
 const bucket = admin.storage().bucket();
 import FormData from 'form-data';
+import {
+  ApplicantPage,
+  ApplicantPageImageProperties,
+} from '../../src/utils/new-types';
+import { storagePaths } from './utils/storage';
+import { dbDocRefs } from './utils/db';
 type ContentTypes = 'jpeg' | 'pdf';
 const NEW_IMAGE_WIDTH = 1240;
+
+export const updateImageProperties = functions
+  .region('asia-southeast2')
+  .firestore.document('companies/{companyId}/pages/{pageId}')
+  .onUpdate(async (change, context) => {
+    const prevPage = change.before.data() as ApplicantPage;
+    const newPage = change.after.data() as ApplicantPage;
+    const pageId = context.params.pageId;
+    if (
+      newPage.updatingFixedImage &&
+      !prevPage.updatingFixedImage &&
+      newPage.imageProperties
+    ) {
+      const { companyId, dashboardId, applicantId, name } = newPage;
+      const IMAGE_SUFFIX = '.jpeg';
+      const filePath = storagePaths.getOriginalDocPath(
+        companyId,
+        dashboardId,
+        applicantId,
+        `${name}${IMAGE_SUFFIX}`
+      );
+      const [file] = await bucket.file(filePath).download();
+      const pipeline = fixImagePipeline(newPage.imageProperties, file);
+      const fixedImage = await pipeline.toBuffer();
+      const { height, width } = await sharp(fixedImage).metadata();
+      if (!width || !height) return functions.logger.log('No width or height');
+      const fixedPDF = toPDF(fixedImage, { width, height });
+      const FIXED_IMAGE_SUFFIX = '.pdf';
+      const fixedImagePath = storagePaths.getFixedDocPath(
+        companyId,
+        dashboardId,
+        applicantId,
+        `${name}${FIXED_IMAGE_SUFFIX}`
+      );
+      const writableStream = getWritableStream(fixedImagePath, {
+        contentType: 'application/pdf',
+        contentDisposition: `inline filename="fixed.pdf"`,
+      });
+      fixedPDF.pipe(writableStream);
+      await new Promise((resolve, reject) => {
+        writableStream.on('finish', resolve);
+        writableStream.on('error', reject);
+      });
+      const pageRef = dbDocRefs.getPageRef(companyId, pageId);
+      await pageRef.update({
+        updatingFixedImage: false,
+      });
+      return;
+    } else {
+      return functions.logger.log('No updated image properties');
+    }
+  });
+
+const fixImagePipeline = (
+  imageProperties: ApplicantPageImageProperties,
+  file?: Buffer
+) => {
+  let pipeline;
+  if (file) {
+    pipeline = sharp(file);
+  } else {
+    pipeline = sharp();
+  }
+  const { brightness, sharpness, contrast, rotateRight, normalise } =
+    imageProperties;
+  if (brightness !== undefined) {
+    pipeline.modulate({ brightness: parseFloat(brightness) });
+  }
+  if (sharpness !== undefined) {
+    const SHARPNESS_NUMBER = parseFloat(sharpness);
+    if (SHARPNESS_NUMBER === 0) {
+      pipeline.sharpen();
+    } else {
+      pipeline.sharpen(SHARPNESS_NUMBER);
+    }
+  }
+  if (contrast !== undefined) {
+    const CONTRAST_NUMBER = parseFloat(contrast);
+    // got the contrast formula from https://github.com/lovell/sharp/issues/1958
+    const CONTRAST_LINEAR_EQUATION = -(128 * CONTRAST_NUMBER) + 128;
+    pipeline.linear(CONTRAST_NUMBER, CONTRAST_LINEAR_EQUATION);
+  }
+
+  if (rotateRight !== undefined) {
+    pipeline.rotate(parseInt(rotateRight));
+  }
+
+  if (normalise) {
+    pipeline.normalize();
+  }
+
+  return pipeline;
+};
 
 export const onImagePropertyUpdated = functions
   .region('asia-southeast2')
@@ -481,7 +580,9 @@ const toJPEG = (
   if (task === 'resize') {
     pipeline
       .withMetadata() // Keep original metadata of image
-      .rotate(); // Fix image orientation based on image EXIF data
+      .rotate() // Fix image orientation based on image EXIF data
+      .removeAlpha()
+      .flatten();
 
     if (options?.angle) {
       functions.logger.log(options.angle);
@@ -491,7 +592,7 @@ const toJPEG = (
 
     return pipeline;
   } else {
-    pipeline.removeAlpha().flatten().sharpen().normalise();
+    pipeline.sharpen().normalise();
     if (!options?.removeBrightness) {
       pipeline.modulate({
         brightness: BRIGHTNESS_ADJUSTMENT,

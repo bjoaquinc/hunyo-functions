@@ -111,6 +111,13 @@ export const dbDocRefs = {
       .collection('applicants')
       .doc(applicantId)
       .withConverter(converter<Applicant>()),
+  getPageRef: (companyId: string, pageId: string) =>
+    db
+      .collection('companies')
+      .doc(companyId)
+      .collection('pages')
+      .doc(pageId)
+      .withConverter(converter<ApplicantPage>()),
 };
 
 export const dbColGroupRefs = {
