@@ -2,7 +2,16 @@
 /* eslint-disable object-curly-spacing */
 /* eslint-disable indent */
 import admin from 'firebase-admin';
+import * as functions from 'firebase-functions';
 admin.initializeApp();
+import * as amplitude from '@amplitude/analytics-node';
+if (process.env.FUNCTIONS_EMULATOR === 'true') {
+  functions.logger.log('Running in emulator');
+  amplitude.init(process.env.AMPLITUDE_API_KEY_DEV as string);
+} else {
+  functions.logger.log('Running in production');
+  amplitude.init(process.env.AMPLITUDE_API_KEY_PROD as string);
+}
 export const db = admin.firestore();
 db.settings({
   ignoreUndefinedProperties: true,

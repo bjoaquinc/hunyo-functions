@@ -78,9 +78,11 @@ const fixImagePipeline = (
   }
   const { brightness, sharpness, contrast, rotateRight, normalise } =
     imageProperties;
+  // Adjust brightness
   if (brightness !== undefined) {
     pipeline.modulate({ brightness: parseFloat(brightness) });
   }
+  // Adjust sharpness if 0 perform default mild sharpening
   if (sharpness !== undefined) {
     const SHARPNESS_NUMBER = parseFloat(sharpness);
     if (SHARPNESS_NUMBER === 0) {
@@ -89,17 +91,18 @@ const fixImagePipeline = (
       pipeline.sharpen(SHARPNESS_NUMBER);
     }
   }
+  // Adjust contrast
   if (contrast !== undefined) {
     const CONTRAST_NUMBER = parseFloat(contrast);
-    // got the contrast formula from https://github.com/lovell/sharp/issues/1958
+    // got this contrast formula from https://github.com/lovell/sharp/issues/1958
     const CONTRAST_LINEAR_EQUATION = -(128 * CONTRAST_NUMBER) + 128;
     pipeline.linear(CONTRAST_NUMBER, CONTRAST_LINEAR_EQUATION);
   }
-
+  // Rotate image
   if (rotateRight !== undefined) {
     pipeline.rotate(parseInt(rotateRight));
   }
-
+  // Apply base Sharp normalise to increase color range of image
   if (normalise) {
     pipeline.normalize();
   }
