@@ -42,8 +42,8 @@ export const { onCreateMessage, onUpdateMessage } = messages;
 export const { updateApplicantStatusAndIncrementDashboardCounters } =
   applicants;
 export const {
-  updateDocumentStatusToAdminChecked,
-  updateDocumentStatusToAccepted,
+  // updateDocumentStatusToAdminChecked,
+  // updateDocumentStatusToAccepted,
   toggleStatusNotApplicable,
   decrementUserActionsCount,
 } = documents;

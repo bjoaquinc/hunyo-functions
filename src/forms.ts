@@ -81,8 +81,9 @@ export const createForm = functions
         status: 'not-submitted',
         docNumber: dashboardData.docs[docName].docNumber,
         totalPages: 0,
-        adminAcceptedPages: 0,
-        acceptedPages: 0,
+        submissionCount: 0,
+        // adminAcceptedPages: 0,
+        // acceptedPages: 0,
       });
       promises.push(promise);
     });
