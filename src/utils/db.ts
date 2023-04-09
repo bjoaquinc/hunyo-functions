@@ -9,7 +9,6 @@ import {
   DraftDashboard,
   Message,
   AcceptedPage,
-  RejectionPages,
 } from '../../../src/utils/types';
 import { ApplicantDocument, ApplicantPage } from '../../../src/utils/new-types';
 
@@ -27,9 +26,6 @@ export const dbColRefs = {
   acceptedPagesRef: db
     .collection('acceptedPages')
     .withConverter(converter<AcceptedPage>()),
-  rejectedPagesRef: db
-    .collection('rejections')
-    .withConverter(converter<RejectionPages>()),
   getUsersRef: (companyId: string) =>
     db
       .collection('companies')
