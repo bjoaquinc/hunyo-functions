@@ -2,7 +2,7 @@ import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import { dbColRefs, dbDocRefs } from './utils/db';
 import { Applicant } from '../../src/utils/types';
-import { incrementDashboardCounters } from './dashboards';
+import { updateDashboardCounters } from './dashboards';
 
 export const updateApplicantStatusAndIncrementDashboardCounters = functions
   .region('asia-southeast2')
@@ -30,14 +30,14 @@ export const updateApplicantStatusAndIncrementDashboardCounters = functions
       await applicantRef.update({
         status: 'complete',
       });
-      await incrementDashboardCounters(
+      await updateDashboardCounters(
         companyId,
         dashboardId,
         'completeApplicantsCount',
         1
       );
       // Decrement applicant from incomplete
-      await incrementDashboardCounters(
+      await updateDashboardCounters(
         companyId,
         dashboardId,
         'incompleteApplicantsCount',

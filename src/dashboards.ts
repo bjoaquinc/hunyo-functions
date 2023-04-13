@@ -41,13 +41,13 @@ export const onPublishDashboard = functions
         promises.push(promise);
       });
       await Promise.all(promises);
-      await incrementDashboardCounters(
+      await updateDashboardCounters(
         companyId,
         dashboardId,
         'applicantsCount',
         applicants.length
       );
-      await incrementDashboardCounters(
+      await updateDashboardCounters(
         companyId,
         dashboardId,
         'incompleteApplicantsCount',
@@ -56,7 +56,7 @@ export const onPublishDashboard = functions
     }
   });
 
-export const incrementDashboardCounters = async (
+export const updateDashboardCounters = async (
   companyId: string,
   dashboardId: string,
   counter:

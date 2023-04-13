@@ -66,24 +66,24 @@ export const createForm = functions
     });
 
     const promises: Promise<void>[] = [];
-    Object.keys(dashboardData.docs).forEach((docName) => {
+    const docs = dashboardData.docs;
+    Object.keys(docs).forEach((docName) => {
       const promise = createDocument(companyId, {
         createdAt: admin.firestore.FieldValue.serverTimestamp() as Timestamp,
         formId: formDocRef.id,
         name: docName,
-        requestedFormat: dashboardData.docs[docName].format,
-        isRequired: dashboardData.docs[docName].isRequired,
-        sample: dashboardData.docs[docName].sample,
-        instructions: dashboardData.docs[docName].instructions,
+        requestedFormat: docs[docName].format,
+        isRequired: docs[docName].isRequired,
+        sample: docs[docName].sample,
+        instructions: docs[docName].instructions,
         dashboardId,
         applicantId: snapshot.id,
         companyId,
         status: 'not-submitted',
-        docNumber: dashboardData.docs[docName].docNumber,
+        docNumber: docs[docName].docNumber,
         totalPages: 0,
         submissionCount: 0,
-        // adminAcceptedPages: 0,
-        // acceptedPages: 0,
+        isUpdating: false,
       });
       promises.push(promise);
     });

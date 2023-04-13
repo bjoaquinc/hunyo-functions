@@ -41,9 +41,4 @@ export const { onPublishDashboard } = dashboards;
 export const { onCreateMessage, onUpdateMessage } = messages;
 export const { updateApplicantStatusAndIncrementDashboardCounters } =
   applicants;
-export const {
-  // updateDocumentStatusToAdminChecked,
-  // updateDocumentStatusToAccepted,
-  toggleStatusNotApplicable,
-  decrementUserActionsCount,
-} = documents;
+export const { onDocStatusUpdate, toggleStatusNotApplicable } = documents;

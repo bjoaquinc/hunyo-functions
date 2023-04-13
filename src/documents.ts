@@ -1,10 +1,109 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import { dbColRefs, dbDocRefs } from './utils/db';
-import { ApplicantDocument } from '../../src/utils/new-types';
+import { ApplicantDocument, ApplicantPage } from '../../src/utils/new-types';
 // import { incrementApplicantDocs } from './applicants';
-import { incrementDashboardCounters } from './dashboards';
-// import { PDFDocument } from 'pdf-lib';
+import { updateDashboardCounters } from './dashboards';
+import { updateForm } from './forms';
+import { updateApplicant } from './applicants';
+import { PDFDocument } from 'pdf-lib';
+
+export const onDocStatusUpdate = functions
+  .region('asia-southeast2')
+  .runWith({
+    timeoutSeconds: 300,
+    memory: '2GB',
+  })
+  .firestore.document('companies/{companyId}/documents/{documentId}')
+  .onUpdate(async (change, context) => {
+    const prevDoc = change.before.data() as ApplicantDocument;
+    const newDoc = change.after.data() as ApplicantDocument;
+    const docId = context.params.documentId;
+    const { formId, companyId, dashboardId, applicantId } = newDoc;
+    const INCREMENT = admin.firestore.FieldValue.increment(1);
+    const DECREMENT = admin.firestore.FieldValue.increment(-1);
+
+    if (prevDoc.status !== newDoc.status) {
+      const status = newDoc.status;
+      // Submitted by Applicant
+      if (status === 'submitted') {
+        // Add document to Admin Page for checking
+        await updateForm(formId, {
+          adminCheckDocs: INCREMENT,
+        });
+      }
+      // Accepted by Admin
+      if (status === 'admin-checked') {
+        // Remove document from Admin Page
+        await updateForm(formId, {
+          adminCheckDocs: DECREMENT,
+        });
+        // Increase adminAcceptedDocs in applicant
+        await updateApplicant(
+          { companyId, dashboardId, applicantId },
+          {
+            adminAcceptedDocs: INCREMENT,
+          }
+        );
+        // Increase dashboard actions count
+        await updateDashboardCounters(
+          companyId,
+          dashboardId,
+          'actionsCount',
+          1
+        );
+      }
+      // Accepted by User
+      if (status === 'accepted') {
+        // Increase accepted docs in applicant
+        await updateApplicant(
+          { companyId, dashboardId, applicantId },
+          {
+            acceptedDocs: INCREMENT,
+          }
+        );
+        // Remove action count from dashboard counter
+        await updateDashboardCounters(
+          companyId,
+          dashboardId,
+          'actionsCount',
+          -1
+        );
+        await stitchAndUploadPDF({ id: docId, ...newDoc });
+      }
+      if (status === 'rejected') {
+        // Rejected by Admin
+        if (prevDoc.status === 'submitted') {
+          // Remove document from Admin Page
+          await updateForm(formId, {
+            adminCheckDocs: DECREMENT,
+          });
+        }
+        // Rejected by User
+        if (prevDoc.status === 'admin-checked') {
+          // Decrease adminAcceptedDocs in applicant
+          await updateApplicant(
+            { companyId, dashboardId, applicantId },
+            {
+              adminAcceptedDocs: DECREMENT,
+            }
+          );
+          // Increase dashboard actions count
+          await updateDashboardCounters(
+            companyId,
+            dashboardId,
+            'actionsCount',
+            -1
+          );
+        }
+      }
+      await change.after.ref.update({
+        isUpdating: false,
+      });
+    } else {
+      return functions.logger.log('Document status not updated');
+    }
+  });
 
 // export const updateDocumentStatusToAdminChecked = functions
 //   .region('asia-southeast2')
@@ -32,7 +131,7 @@ import { incrementDashboardCounters } from './dashboards';
 //         'adminAcceptedDocs',
 //         1
 //       );
-//       await incrementDashboardCounters(
+//       await updateDashboardCounters(
 //         companyId,
 //         dashboardId,
 //         'actionsCount',
@@ -44,26 +143,21 @@ import { incrementDashboardCounters } from './dashboards';
 //     }
 //   });
 
-export const decrementUserActionsCount = functions
-  .region('asia-southeast2')
-  .firestore.document('companies/{companyId}/documents/{documentId}')
-  .onUpdate(async (change, context) => {
-    const prevDoc = change.before.data() as ApplicantDocument;
-    const newDoc = change.after.data() as ApplicantDocument;
+// export const decrementUserActionsCount = functions
+//   .region('asia-southeast2')
+//   .firestore.document('companies/{companyId}/documents/{documentId}')
+//   .onUpdate(async (change, context) => {
+//     const prevDoc = change.before.data() as ApplicantDocument;
+//     const newDoc = change.after.data() as ApplicantDocument;
 
-    if (
-      prevDoc.status === 'admin-checked' &&
-      (newDoc.status === 'accepted' || newDoc.status === 'rejected')
-    ) {
-      const { companyId, dashboardId } = newDoc;
-      await incrementDashboardCounters(
-        companyId,
-        dashboardId,
-        'actionsCount',
-        -1
-      );
-    }
-  });
+//     if (
+//       prevDoc.status === 'admin-checked' &&
+//       (newDoc.status === 'accepted' || newDoc.status === 'rejected')
+//     ) {
+//       const { companyId, dashboardId } = newDoc;
+//       await updateDashboardCounters(companyId, dashboardId, 'actionsCount', -1);
+//     }
+//   });
 
 // export const updateDocumentStatusToAccepted = functions
 //   .region('asia-southeast2')
@@ -99,51 +193,49 @@ export const decrementUserActionsCount = functions
 //     }
 //   });
 
-// TODO: Stitch pages into a single PDF;
+const stitchAndUploadPDF = async (doc: ApplicantDocument & { id: string }) => {
+  functions.logger.log('Running stitchAndUploadPDF');
+  const pagesRef = dbColRefs.getPagesRef(doc.companyId);
+  // eslint-disable-next-line max-len
+  const pages = await pagesRef
+    .where('docId', '==', doc.id)
+    .where('submissionCount', '==', doc.submissionCount)
+    .orderBy('pageNumber')
+    .get();
+  const pagesData = pages.docs.map((page) => page.data());
+  functions.logger.log('Pages data', pagesData);
+  const mergedDoc = await stitchPDFPages(pagesData);
 
-// const stitchAndUploadPDF = async (doc: ApplicantDocument & { id: string }) => {
-//   functions.logger.log('Running stitchAndUploadPDF');
-//   const pagesRef = dbColRefs.getPagesRef(doc.companyId);
-//   // eslint-disable-next-line max-len
-//   const pages = await pagesRef
-//     .where('docId', '==', doc.id)
-//     .where('status', '==', 'accepted')
-//     .orderBy('pageNumber')
-//     .get();
-//   const pagesData = pages.docs.map((page) => page.data());
-//   functions.logger.log('Pages data', pagesData);
-//   const mergedDoc = await stitchPDFPages(pagesData);
+  const newFileName = doc.updatedName || `${doc.name}.pdf`;
+  // eslint-disable-next-line max-len
+  const newFilePath = `companies/${doc.companyId}/dashboards/${doc.dashboardId}/final/${doc.applicantId}/${newFileName}`;
+  const file = admin.storage().bucket().file(newFilePath);
+  await file.save(mergedDoc, {
+    metadata: {
+      contentType: 'application/pdf',
+      contentDisposition: `attachment; filename=${newFileName}`,
+    },
+  });
+};
 
-//   const newFileName = doc.updatedName || `${doc.name}.pdf`;
-//   // eslint-disable-next-line max-len
-//   const newFilePath = `companies/${doc.companyId}/dashboards/${doc.dashboardId}/final/${doc.applicantId}/${newFileName}`;
-//   const file = admin.storage().bucket().file(newFilePath);
-//   await file.save(mergedDoc, {
-//     metadata: {
-//       contentType: 'application/pdf',
-//       contentDisposition: `attachment; filename=${newFileName}`,
-//     },
-//   });
-// };
-
-// export const stitchPDFPages = async (pages: ApplicantPage[]) => {
-//   functions.logger.log('Running stitchPDFPages');
-//   const pdfDoc = await PDFDocument.create();
-//   for (const page of pages) {
-//     // eslint-disable-next-line max-len
-//     const filePath = `companies/${page.companyId}/dashboards/${page.dashboardId}/fixed/${page.applicantId}/${page.name}.pdf`;
-//     const [pdf] = await admin.storage().bucket().file(filePath).download();
-//     const doc = await PDFDocument.load(pdf);
-//     const docPages = await pdfDoc.copyPages(doc, doc.getPageIndices());
-//     docPages.forEach((docPage) => {
-//       functions.logger.log('Adding page', docPage);
-//       pdfDoc.addPage(docPage);
-//     });
-//   }
-//   const mergedDoc = await pdfDoc.save();
-//   const mergedDocBuffer = Buffer.from(mergedDoc);
-//   return mergedDocBuffer;
-// };
+export const stitchPDFPages = async (pages: ApplicantPage[]) => {
+  functions.logger.log('Running stitchPDFPages');
+  const pdfDoc = await PDFDocument.create();
+  for (const page of pages) {
+    // eslint-disable-next-line max-len
+    const filePath = `companies/${page.companyId}/dashboards/${page.dashboardId}/fixed/${page.applicantId}/${page.name}.pdf`;
+    const [pdf] = await admin.storage().bucket().file(filePath).download();
+    const doc = await PDFDocument.load(pdf);
+    const docPages = await pdfDoc.copyPages(doc, doc.getPageIndices());
+    docPages.forEach((docPage) => {
+      functions.logger.log('Adding page', docPage);
+      pdfDoc.addPage(docPage);
+    });
+  }
+  const mergedDoc = await pdfDoc.save();
+  const mergedDocBuffer = Buffer.from(mergedDoc);
+  return mergedDocBuffer;
+};
 
 export const toggleStatusNotApplicable = functions
   .region('asia-southeast2')
