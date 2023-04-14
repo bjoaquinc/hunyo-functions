@@ -39,12 +39,22 @@ export const onDocStatusUpdate = functions
           adminCheckDocs: DECREMENT,
         });
         // Increase adminAcceptedDocs in applicant
-        await updateApplicant(
-          { companyId, dashboardId, applicantId },
-          {
-            adminAcceptedDocs: INCREMENT,
-          }
-        );
+        if (newDoc.isRequired) {
+          await updateApplicant(
+            { companyId, dashboardId, applicantId },
+            {
+              adminAcceptedDocs: INCREMENT,
+            }
+          );
+          // Increase Optional docs counter to show action button on dashboard
+        } else {
+          await updateApplicant(
+            { companyId, dashboardId, applicantId },
+            {
+              unCheckedOptionalDocs: INCREMENT,
+            }
+          );
+        }
         // Increase dashboard actions count
         await updateDashboardCounters(
           companyId,
@@ -55,13 +65,24 @@ export const onDocStatusUpdate = functions
       }
       // Accepted by User
       if (status === 'accepted') {
-        // Increase accepted docs in applicant
-        await updateApplicant(
-          { companyId, dashboardId, applicantId },
-          {
-            acceptedDocs: INCREMENT,
-          }
-        );
+        // Increase accepted docs in applicant if required
+        if (newDoc.isRequired) {
+          await updateApplicant(
+            { companyId, dashboardId, applicantId },
+            {
+              acceptedDocs: INCREMENT,
+            }
+          );
+          // Decrease Optional docs counter to hide action button on dashboard
+        } else {
+          await updateApplicant(
+            { companyId, dashboardId, applicantId },
+            {
+              unCheckedOptionalDocs: DECREMENT,
+            }
+          );
+        }
+
         // Remove action count from dashboard counter
         await updateDashboardCounters(
           companyId,
@@ -81,14 +102,25 @@ export const onDocStatusUpdate = functions
         }
         // Rejected by User
         if (prevDoc.status === 'admin-checked') {
-          // Decrease adminAcceptedDocs in applicant
-          await updateApplicant(
-            { companyId, dashboardId, applicantId },
-            {
-              adminAcceptedDocs: DECREMENT,
-            }
-          );
-          // Increase dashboard actions count
+          // Decrease adminAcceptedDocs in applicant if required
+          if (newDoc.isRequired) {
+            await updateApplicant(
+              { companyId, dashboardId, applicantId },
+              {
+                adminAcceptedDocs: DECREMENT,
+              }
+            );
+
+            // Decrease Optional docs counter to hide action button on dashboard
+          } else {
+            await updateApplicant(
+              { companyId, dashboardId, applicantId },
+              {
+                unCheckedOptionalDocs: DECREMENT,
+              }
+            );
+          }
+          // Decrease dashboard actions count
           await updateDashboardCounters(
             companyId,
             dashboardId,
@@ -140,22 +172,6 @@ export const onDocStatusUpdate = functions
 //       return functions.logger.log(
 //         'Successfully updated applicant document status to admin-checked'
 //       );
-//     }
-//   });
-
-// export const decrementUserActionsCount = functions
-//   .region('asia-southeast2')
-//   .firestore.document('companies/{companyId}/documents/{documentId}')
-//   .onUpdate(async (change, context) => {
-//     const prevDoc = change.before.data() as ApplicantDocument;
-//     const newDoc = change.after.data() as ApplicantDocument;
-
-//     if (
-//       prevDoc.status === 'admin-checked' &&
-//       (newDoc.status === 'accepted' || newDoc.status === 'rejected')
-//     ) {
-//       const { companyId, dashboardId } = newDoc;
-//       await updateDashboardCounters(companyId, dashboardId, 'actionsCount', -1);
 //     }
 //   });
 

@@ -17,7 +17,9 @@ export const onPublishDashboard = functions
       const companyId = context.params.companyId;
       const dashboardId = context.params.dashboardId;
       const applicants = newDashboard.applicants;
-      const TOTAL_DOCS = Object.keys(newDashboard.docs).length;
+      const TOTAL_DOCS = Object.values(newDashboard.docs).filter(
+        (doc) => doc.isRequired
+      ).length; // Only documents that are required are counted.
       const promises: Promise<void>[] = [];
       applicants.forEach((applicantEmail) => {
         const promise = createApplicant(
@@ -36,6 +38,7 @@ export const onPublishDashboard = functions
             totalDocs: TOTAL_DOCS,
             adminAcceptedDocs: 0,
             acceptedDocs: 0,
+            unCheckedOptionalDocs: 0,
           }
         );
         promises.push(promise);
