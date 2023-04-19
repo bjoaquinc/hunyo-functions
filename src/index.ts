@@ -38,7 +38,7 @@ export const {
   onImagePropertyUpdated,
   updateImageProperties,
 } = manageFiles;
-export const { addApplicantsToDashboard } = dashboards;
+export const { addApplicantsToDashboard, copySamples } = dashboards;
 export const { onCreateMessage, onUpdateMessage } = messages;
 export const { updateApplicantStatusAndIncrementDashboardCounters } =
   applicants;

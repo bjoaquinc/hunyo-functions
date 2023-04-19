@@ -92,4 +92,6 @@ export const storagePaths = {
       applicantId,
       docName
     ),
+  getAllSamplesPath: (companyId: string, dashboardId: string) =>
+    getFullPath('companies', companyId, 'dashboards', dashboardId, 'samples'),
 };

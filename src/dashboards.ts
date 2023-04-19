@@ -1,9 +1,10 @@
 import * as functions from 'firebase-functions';
-import { PublishedDashboard } from '../../src/utils/types';
+import { DraftDashboard, PublishedDashboard } from '../../src/utils/types';
 import * as admin from 'firebase-admin';
 import { dbDocRefs } from './utils/db';
 import { createApplicant } from './applicants';
 import { Timestamp } from 'firebase/firestore';
+import { storagePaths } from './utils/storage';
 
 export const addApplicantsToDashboard = functions
   .region('asia-southeast2')
@@ -82,3 +83,48 @@ export const updateDashboardCounters = async (
     [counter]: increment,
   });
 };
+
+export const copySamples = functions
+  .region('asia-southeast2')
+  .runWith({
+    memory: '2GB',
+    timeoutSeconds: 300,
+  })
+  .firestore.document('companies/{companyId}/dashboards/{dashboardId}')
+  .onCreate(async (docSnap, context) => {
+    const dashboard = docSnap.data() as DraftDashboard;
+    const companyId = context.params.companyId;
+    const copiedDashboard = dashboard.copiedDashboard;
+
+    if (copiedDashboard) {
+      const samplesPath = storagePaths.getAllSamplesPath(
+        companyId,
+        copiedDashboard
+      );
+      const [files] = await admin.storage().bucket().getFiles({
+        prefix: samplesPath,
+      });
+      if (files.length > 0) {
+        const newStoragePath = (fileName: string) =>
+          `companies/${companyId}/dashboards/${docSnap.id}/samples/${fileName}`;
+        const promises: Promise<any>[] = [];
+        files.forEach((file) => {
+          const fileName = file.name.split('/').pop();
+          const promise = admin
+            .storage()
+            .bucket()
+            .file(file.name)
+            .copy(newStoragePath(fileName as string));
+          promises.push(promise);
+        });
+        await Promise.all(promises);
+        return functions.logger.log('Copied all samples');
+      } else {
+        return functions.logger.log(
+          `No samples in dashboard ${copiedDashboard}`
+        );
+      }
+    } else {
+      return functions.logger.log('No samples to copy');
+    }
+  });
