@@ -25,6 +25,7 @@ import * as manageFiles from './manage-files';
 import * as messages from './messages';
 import * as applicants from './applicants';
 import * as documents from './documents';
+// import * as maintenance from './maintenance/update_firestore';
 
 export const { addCompanyUserRole } = privateData;
 export const { addUserToCompany } = denormalize;
@@ -42,3 +43,4 @@ export const { onCreateMessage, onUpdateMessage } = messages;
 export const { updateApplicantStatusAndIncrementDashboardCounters } =
   applicants;
 export const { onDocStatusUpdate, toggleStatusNotApplicable } = documents;
+// export const { updateFirestore } = maintenance;
