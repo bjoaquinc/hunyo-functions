@@ -97,24 +97,25 @@ export const copySamples = functions
     const copiedDashboard = dashboard.copiedDashboard;
 
     if (copiedDashboard) {
-      const samplesPath = storagePaths.getAllSamplesPath(
-        companyId,
-        copiedDashboard
-      );
-      const [files] = await admin.storage().bucket().getFiles({
-        prefix: samplesPath,
-      });
-      if (files.length > 0) {
-        const newStoragePath = (fileName: string) =>
-          `companies/${companyId}/dashboards/${docSnap.id}/samples/${fileName}`;
+      const sampleNames = Object.values(dashboard.docs)
+        .filter((doc) => doc.sample !== undefined)
+        .map(
+          (doc) => (doc.sample as { file: string; contentType: string }).file
+        );
+
+      if (sampleNames.length > 0) {
         const promises: Promise<any>[] = [];
-        files.forEach((file) => {
-          const fileName = file.name.split('/').pop();
+        const oldFilePath = (sampleName: string) =>
+          storagePaths.getSamplePath(companyId, copiedDashboard, sampleName);
+        const newFilePath = (sampleName: string) =>
+          storagePaths.getSamplePath(companyId, docSnap.id, sampleName);
+
+        sampleNames.forEach((name) => {
           const promise = admin
             .storage()
             .bucket()
-            .file(file.name)
-            .copy(newStoragePath(fileName as string));
+            .file(oldFilePath(name))
+            .copy(newFilePath(name));
           promises.push(promise);
         });
         await Promise.all(promises);
