@@ -44,6 +44,7 @@ export const createForm = functions
     }
 
     const formDocRef = await formsRef.add({
+      createdAt: admin.firestore.FieldValue.serverTimestamp() as Timestamp,
       applicant: {
         id: snapshot.id,
         status: 'not-submitted',

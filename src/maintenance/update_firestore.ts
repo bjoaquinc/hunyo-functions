@@ -49,3 +49,26 @@
 //       functions.logger.error(err);
 //     }
 //   });
+
+// export const addCreatedAtToForms = functions
+//   .region('asia-southeast2')
+//   .pubsub.schedule('55 18 21 * *')
+//   .timeZone('Asia/Manila')
+//   .onRun(async (context) => {
+//     functions.logger.log('Running cron job');
+//     const formsRef = dbColRefs.formsRef;
+//     try {
+//       const formsSnap = await formsRef.get();
+//       functions.logger.log('is it empty?: ', formsSnap.empty);
+//       for (const form of formsSnap.docs) {
+//         functions.logger.log(`Updating data for form ${form.id}`);
+//         await form.ref.update({
+//           createdAt: admin.firestore.FieldValue.serverTimestamp(),
+//         });
+//         await new Promise((resolve) => setTimeout(resolve, 100));
+//       }
+//       functions.logger.log('Successfully added createdAt to all forms');
+//     } catch (err) {
+//       functions.logger.error(err);
+//     }
+//   });

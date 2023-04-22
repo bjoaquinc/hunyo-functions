@@ -40,7 +40,7 @@ const sendTemplateMessage = async (
   template: SendApplicantDocumentRequestTemplate
 ) => {
   const response = await emailTemplates[template.name](message, template);
-  functions.logger.log('Sending error', response);
+  functions.logger.log('Sending message', response);
   return response;
 };
 

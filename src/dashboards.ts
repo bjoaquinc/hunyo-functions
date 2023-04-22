@@ -16,7 +16,7 @@ export const addApplicantsToDashboard = functions
     // const prevDashboard = change.before.data() as DraftDashboard;
     const hasNewApplicants =
       newDashboard.newApplicants.length > 0 &&
-      (!prevDashboard.newApplicants || !prevDashboard.newApplicants.length) &&
+      !prevDashboard.newApplicants.length &&
       newDashboard.isPublished;
     const publishedDashboardWithApplicants =
       !prevDashboard.isPublished &&

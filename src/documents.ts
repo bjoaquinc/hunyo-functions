@@ -297,3 +297,14 @@ export const createDocument = async (
   const documentsRef = dbColRefs.getDocumentsRef(companyId);
   await documentsRef.add(documentData);
 };
+
+export const updateDocument = async (
+  companyId: string,
+  documentId: string,
+  documentData: Partial<ApplicantDocument>
+) => {
+  const documentRef = dbDocRefs.getDocumentRef(companyId, documentId);
+  await documentRef.update({
+    ...documentData,
+  });
+};
