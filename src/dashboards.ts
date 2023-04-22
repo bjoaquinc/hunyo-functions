@@ -10,10 +10,8 @@ export const addApplicantsToDashboard = functions
   .region('asia-southeast2')
   .firestore.document('companies/{companyId}/dashboards/{dashboardId}')
   .onUpdate(async (change, context) => {
-    // Add applicants to dashboard
     const newDashboard = change.after.data() as PublishedDashboard;
     const prevDashboard = change.before.data() as PublishedDashboard;
-    // const prevDashboard = change.before.data() as DraftDashboard;
     const hasNewApplicants =
       newDashboard.newApplicants.length > 0 &&
       !prevDashboard.newApplicants.length &&
