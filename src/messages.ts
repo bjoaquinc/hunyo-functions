@@ -2,8 +2,7 @@
 import { dbColRefs, dbDocRefs } from './utils/db';
 import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
-import { Message } from '../../src/utils/types';
-import { Timestamp } from 'firebase/firestore';
+import { Message } from './utils/types';
 import { sendMessage } from './mailchimp';
 import { updateApplicant } from './applicants';
 import { MessagesSendResponse } from '@mailchimp/mailchimp_transactional';
@@ -13,7 +12,8 @@ export const createMessage = async (message: Message) => {
   const { subject, recipients, body, fromName, metadata, template } = message;
   functions.logger.log('message', message);
   await messagesRef.add({
-    createdAt: admin.firestore.FieldValue.serverTimestamp() as Timestamp,
+    createdAt:
+      admin.firestore.FieldValue.serverTimestamp() as admin.firestore.Timestamp,
     subject,
     recipients,
     body,
@@ -30,7 +30,8 @@ export const updateMessage = async (
   const messageRef = dbDocRefs.getMessageRef(messageId);
   await messageRef.update({
     ...messageData,
-    updatedAt: admin.firestore.FieldValue.serverTimestamp() as Timestamp,
+    updatedAt:
+      admin.firestore.FieldValue.serverTimestamp() as admin.firestore.Timestamp,
   });
 };
 

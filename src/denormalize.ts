@@ -2,7 +2,7 @@ import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 
 import { db } from './index';
-import { Company, User } from '../../src/utils/types';
+import { Company, User } from './utils/types';
 
 export const addUserToCompany = functions
   .region('asia-southeast2')

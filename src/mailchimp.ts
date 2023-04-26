@@ -1,9 +1,6 @@
 import * as functions from 'firebase-functions';
 import mailchimp, { MessagesMessage } from '@mailchimp/mailchimp_transactional';
-import {
-  Message,
-  SendApplicantDocumentRequestTemplate,
-} from '../../src/utils/types';
+import { Message, SendApplicantDocumentRequestTemplate } from './utils/types';
 
 export const sendMessage = async (message: Message) => {
   const mailchimpMessage: MessagesMessage = {

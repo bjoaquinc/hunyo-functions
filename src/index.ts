@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 /* eslint-disable object-curly-spacing */
 /* eslint-disable indent */
-import admin from 'firebase-admin';
+import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
 admin.initializeApp();
 import * as amplitude from '@amplitude/analytics-node';

@@ -1,6 +1,6 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
-import { ApplicantPage } from '../../src/utils/new-types';
+import { ApplicantPage } from './utils/types';
 import { storagePaths } from './utils/storage';
 import { updateDocument } from './documents';
 

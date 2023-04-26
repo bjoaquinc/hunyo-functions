@@ -6,11 +6,10 @@ import {
   Message,
   MessageMetadata,
   SendApplicantDocumentRequestTemplate,
-} from '../../src/utils/types';
+} from './utils/types';
 import { updateApplicant } from './applicants';
 import { createMessage } from './messages';
 import { dbDocRefs, dbColRefs } from './utils/db';
-import { Timestamp } from 'firebase/firestore';
 import { createDocument } from './documents';
 import { DateTime } from 'luxon';
 
@@ -44,7 +43,9 @@ export const createForm = functions
     }
 
     const formDocRef = await formsRef.add({
-      createdAt: admin.firestore.FieldValue.serverTimestamp() as Timestamp,
+      createdAt:
+        // eslint-disable-next-line max-len
+        admin.firestore.FieldValue.serverTimestamp() as admin.firestore.Timestamp,
       applicant: {
         id: snapshot.id,
         status: 'not-submitted',
@@ -70,7 +71,9 @@ export const createForm = functions
     const docs = dashboardData.docs;
     Object.keys(docs).forEach((docName) => {
       const promise = createDocument(companyId, {
-        createdAt: admin.firestore.FieldValue.serverTimestamp() as Timestamp,
+        createdAt:
+          // eslint-disable-next-line max-len
+          admin.firestore.FieldValue.serverTimestamp() as admin.firestore.Timestamp,
         formId: formDocRef.id,
         name: docName,
         requestedFormat: docs[docName].format,
@@ -138,7 +141,9 @@ export const onCreateForm = functions
       applicantId: applicant.id,
     };
     const message: Message = {
-      createdAt: admin.firestore.FieldValue.serverTimestamp() as Timestamp,
+      createdAt:
+        // eslint-disable-next-line max-len
+        admin.firestore.FieldValue.serverTimestamp() as admin.firestore.Timestamp,
       recipients: [{ email: applicant.email, type: 'to' }],
       subject: EMAIL_SUBJECT,
       body: dashboard.messages.opening,

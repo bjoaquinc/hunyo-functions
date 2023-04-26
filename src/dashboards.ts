@@ -1,9 +1,8 @@
 import * as functions from 'firebase-functions';
-import { DraftDashboard, PublishedDashboard } from '../../src/utils/types';
+import { DraftDashboard, PublishedDashboard } from './utils/types';
 import * as admin from 'firebase-admin';
 import { dbDocRefs } from './utils/db';
 import { createApplicant } from './applicants';
-import { Timestamp } from 'firebase/firestore';
 import { storagePaths } from './utils/storage';
 
 export const addApplicantsToDashboard = functions
@@ -36,7 +35,8 @@ export const addApplicantsToDashboard = functions
           },
           {
             createdAt:
-              admin.firestore.FieldValue.serverTimestamp() as Timestamp,
+              // eslint-disable-next-line max-len
+              admin.firestore.FieldValue.serverTimestamp() as admin.firestore.Timestamp,
             email: applicantEmail,
             dashboard: {
               id: dashboardId,

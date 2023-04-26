@@ -9,8 +9,9 @@ import {
   DraftDashboard,
   Message,
   AcceptedPage,
-} from '../../../src/utils/types';
-import { ApplicantDocument, ApplicantPage } from '../../../src/utils/new-types';
+  ApplicantDocument,
+  ApplicantPage,
+} from './types';
 
 export const converter = <T>() => ({
   toFirestore: (data: T) => data,

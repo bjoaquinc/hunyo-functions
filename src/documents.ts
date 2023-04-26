@@ -1,7 +1,7 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import { dbColRefs, dbDocRefs } from './utils/db';
-import { ApplicantDocument, ApplicantPage } from '../../src/utils/new-types';
+import { ApplicantDocument, ApplicantPage } from './utils/types';
 // import { incrementApplicantDocs } from './applicants';
 import { updateDashboardCounters } from './dashboards';
 import { updateForm } from './forms';

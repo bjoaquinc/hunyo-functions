@@ -1,7 +1,7 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import { dbColRefs, dbDocRefs } from './utils/db';
-import { Applicant } from '../../src/utils/types';
+import { Applicant } from './utils/types';
 import { updateDashboardCounters } from './dashboards';
 
 export const onDeleteApplicant = functions

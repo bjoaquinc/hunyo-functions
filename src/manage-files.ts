@@ -5,10 +5,7 @@ import PDFDocument from 'pdfkit';
 import axios from 'axios';
 const bucket = admin.storage().bucket();
 import FormData from 'form-data';
-import {
-  ApplicantPage,
-  ApplicantPageImageProperties,
-} from '../../src/utils/new-types';
+import { ApplicantPage, ApplicantPageImageProperties } from './utils/types';
 import { storagePaths } from './utils/storage';
 import { dbDocRefs } from './utils/db';
 type ContentTypes = 'jpeg' | 'pdf';
