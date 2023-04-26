@@ -37,6 +37,15 @@ export const onDeleteApplicant = functions
           actionsCount: decrement(-UNCHECKED_DOCS_COUNT),
         });
       }
+      const formSnaps = await dbColRefs.formsRef
+        .where('applicant.id', '==', change.after.id)
+        .get();
+      const [formSnap] = formSnaps.docs;
+      if (formSnap) {
+        await formSnap.ref.update({
+          isDeleted: true,
+        });
+      }
     } else {
       return functions.logger.log('Applicant was not deleted.');
     }
