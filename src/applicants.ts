@@ -4,6 +4,44 @@ import { dbColRefs, dbDocRefs } from './utils/db';
 import { Applicant } from '../../src/utils/types';
 import { updateDashboardCounters } from './dashboards';
 
+export const onDeleteApplicant = functions
+  .region('asia-southeast2')
+  .firestore.document(
+    'companies/{companyId}/dashboards/{dashboardId}/applicants/{applicantId}'
+  )
+  .onUpdate(async (change, context) => {
+    const prevApplicant = change.before.data() as Applicant;
+    const newApplicant = change.after.data() as Applicant;
+    if (!prevApplicant.isDeleted && newApplicant.isDeleted) {
+      const decrement = (count: number) =>
+        admin.firestore.FieldValue.increment(count);
+      const companyId = context.params.companyId;
+      const dashboardId = context.params.dashboardId;
+      const dashboardRef = dbDocRefs.getPublishedDashboardRef(
+        companyId,
+        dashboardId
+      );
+
+      const UNCHECKED_DOCS_COUNT =
+        newApplicant.adminAcceptedDocs - newApplicant.acceptedDocs;
+      if (newApplicant.status === 'complete') {
+        await dashboardRef.update({
+          completeApplicantsCount: decrement(-1),
+          applicantsCount: decrement(-1),
+          actionsCount: decrement(-UNCHECKED_DOCS_COUNT),
+        });
+      } else {
+        await dashboardRef.update({
+          incompleteApplicantsCount: decrement(-1),
+          applicantsCount: decrement(-1),
+          actionsCount: decrement(-UNCHECKED_DOCS_COUNT),
+        });
+      }
+    } else {
+      return functions.logger.log('Applicant was not deleted.');
+    }
+  });
+
 export const updateApplicantStatusAndIncrementDashboardCounters = functions
   .region('asia-southeast2')
   .firestore.document(

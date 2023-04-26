@@ -41,8 +41,10 @@ export const {
 } = manageFiles;
 export const { addApplicantsToDashboard, copySamples } = dashboards;
 export const { onCreateMessage, onUpdateMessage } = messages;
-export const { updateApplicantStatusAndIncrementDashboardCounters } =
-  applicants;
+export const {
+  updateApplicantStatusAndIncrementDashboardCounters,
+  onDeleteApplicant,
+} = applicants;
 export const { onDocStatusUpdate, toggleStatusNotApplicable } = documents;
 export const { onDeletePage } = pages;
 // export const { addCreatedAtToForms } = maintenance;
