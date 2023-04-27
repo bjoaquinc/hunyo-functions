@@ -1,6 +1,6 @@
 // import * as functions from 'firebase-functions';
 // import * as admin from 'firebase-admin';
-// import { dbColRefs } from '../utils/db';
+// import { dbColRefs, dbDocRefs } from '../utils/db';
 
 // export const updateFirestore = functions
 //   .region('asia-southeast2')
@@ -70,5 +70,43 @@
 //       functions.logger.log('Successfully added createdAt to all forms');
 //     } catch (err) {
 //       functions.logger.error(err);
+//     }
+//   });
+
+// export const addFormIdsToApplicant = functions
+//   .region('asia-southeast2')
+//   .pubsub.schedule('45 13 27 * *')
+//   .timeZone('Asia/Manila')
+//   .onRun(async (context) => {
+//     functions.logger.log('Running cron job');
+//     const formsRef = dbColRefs.formsRef;
+//     try {
+//       const formsSnap = await formsRef.get();
+//       functions.logger.log('is it empty?: ', formsSnap.empty);
+//       for (const form of formsSnap.docs) {
+//         const { company, dashboard, applicant } = form.data();
+//         const applicantRef = dbDocRefs.getApplicantRef(
+//           company.id,
+//           dashboard.id,
+//           applicant.id
+//         );
+//         const applicantSnap = await applicantRef.get();
+//         if (applicantSnap.exists) {
+//           // Handle if it exists
+//           await applicantRef.update({
+//             formId: form.id,
+//           });
+//           functions.logger.log(
+//             `Successfully updated ${applicant.email} with id ${applicant.id}`
+//           );
+//         } else {
+//           functions.logger.log(`${applicant.email} does not exist`);
+//         }
+//       }
+//       return functions.logger.log(
+//         'Successfully added formId to all applicants'
+//       );
+//     } catch (err) {
+//       return functions.logger.error(err);
 //     }
 //   });

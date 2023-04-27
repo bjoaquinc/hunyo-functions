@@ -42,6 +42,7 @@ export const createForm = functions
       return functions.logger.log(`Incorrect dashboard id ${dashboardId}`);
     }
 
+    // Create Form for Applicant
     const formDocRef = await formsRef.add({
       createdAt:
         // eslint-disable-next-line max-len
@@ -67,6 +68,12 @@ export const createForm = functions
       adminCheckDocs: 0,
     });
 
+    // Add FormId to Applicant
+    await snapshot.ref.update({
+      formId: formDocRef.id,
+    });
+
+    // Create Documents for the Applicant
     const promises: Promise<void>[] = [];
     const docs = dashboardData.docs;
     Object.keys(docs).forEach((docName) => {
