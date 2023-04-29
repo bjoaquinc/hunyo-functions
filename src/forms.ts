@@ -123,10 +123,10 @@ export const onCreateForm = functions
     const DEV_URL = 'http://localhost:8080';
     const PROD_URL = 'https://hunyo.design';
     let FORM_LINK = '';
-    if (process.env.NODE_ENV === 'production') {
-      FORM_LINK = `${PROD_URL}/applicant/forms/${form.id}`;
-    } else {
+    if (process.env.FUNCTIONS_EMULATOR) {
       FORM_LINK = `${DEV_URL}/applicant/forms/${form.id}`;
+    } else {
+      FORM_LINK = `${PROD_URL}/applicant/forms/${form.id}`;
     }
     const dateTime = DateTime.fromMillis(dashboard.deadline.toMillis());
     const deadline = dateTime.toLocaleString({

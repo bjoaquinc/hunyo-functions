@@ -26,6 +26,7 @@ import * as messages from './messages';
 import * as applicants from './applicants';
 import * as documents from './documents';
 import * as pages from './pages';
+import * as invites from './invites';
 // import * as maintenance from './maintenance/update_firestore';
 
 export const { addCompanyUserRole } = privateData;
@@ -47,4 +48,5 @@ export const {
 } = applicants;
 export const { onDocStatusUpdate, toggleStatusNotApplicable } = documents;
 export const { onDeletePage } = pages;
+export const { onCreateInvite } = invites;
 // export const { addFormIdsToApplicant } = maintenance;

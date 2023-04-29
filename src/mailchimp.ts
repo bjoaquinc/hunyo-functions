@@ -1,6 +1,10 @@
 import * as functions from 'firebase-functions';
 import mailchimp, { MessagesMessage } from '@mailchimp/mailchimp_transactional';
-import { Message, SendApplicantDocumentRequestTemplate } from './utils/types';
+import {
+  Message,
+  SendApplicantDocumentRequestTemplate,
+  SendTeamInvite,
+} from './utils/types';
 
 export const sendMessage = async (message: Message) => {
   const mailchimpMessage: MessagesMessage = {
@@ -34,9 +38,15 @@ const sendPlainTextMessage = async (message: MessagesMessage) => {
 
 const sendTemplateMessage = async (
   message: MessagesMessage,
-  template: SendApplicantDocumentRequestTemplate
+  template: SendApplicantDocumentRequestTemplate | SendTeamInvite
 ) => {
-  const response = await emailTemplates[template.name](message, template);
+  let response;
+  if (template.name === 'Applicant Documents Request') {
+    response = await emailTemplates[template.name](message, template);
+  } else {
+    response = await emailTemplates[template.name](message, template);
+  }
+  // const response = await emailTemplates[template.name](message, template);
   functions.logger.log('Sending message', response);
   return response;
 };
@@ -62,6 +72,38 @@ const emailTemplates = {
             {
               name: 'COMPANY_DEADLINE',
               content: template.data.companyDeadline,
+            },
+          ],
+          ...message,
+        },
+        template_name: template.name,
+        template_content: [],
+      })
+      .catch((error) => {
+        throw error;
+      });
+    return response;
+  },
+  'Team Invite Message': async (
+    message: MessagesMessage,
+    template: SendTeamInvite
+  ) => {
+    const client = mailchimp(process.env.MAILCHIMP_API_KEY as string);
+    const response = await client.messages
+      .sendTemplate({
+        message: {
+          global_merge_vars: [
+            {
+              name: 'TEAM_MEMBER_NAME',
+              content: template.data.teamMemberName,
+            },
+            {
+              name: 'COMPANY_NAME',
+              content: template.data.companyName,
+            },
+            {
+              name: 'INVITE_LINK',
+              content: template.data.inviteLink,
             },
           ],
           ...message,

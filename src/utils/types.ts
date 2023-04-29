@@ -22,6 +22,7 @@ export interface Invite {
   email: string;
   resend: boolean;
   isComplete: boolean;
+  invitedBy: string;
 }
 
 export interface Company {
@@ -211,7 +212,7 @@ export interface Message {
   body: string;
   fromName?: string;
   metadata?: MessageMetadata;
-  template?: SendApplicantDocumentRequestTemplate;
+  template?: SendApplicantDocumentRequestTemplate | SendTeamInvite;
   updatedAt?: firestore.Timestamp;
   messageResponseData?: {
     id: string;
@@ -231,6 +232,15 @@ export interface SendApplicantDocumentRequestTemplate {
     formLink: string;
     companyName: string;
     companyDeadline: string;
+  };
+}
+
+export interface SendTeamInvite {
+  name: 'Team Invite Message';
+  data: {
+    teamMemberName: string;
+    companyName: string;
+    inviteLink: string;
   };
 }
 
