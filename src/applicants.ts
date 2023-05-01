@@ -1,8 +1,15 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import { dbColRefs, dbDocRefs } from './utils/db';
-import { Applicant } from './utils/types';
+import {
+  Applicant,
+  ApplicantWithFormId,
+  Message,
+  SendApplicantDocumentRequestTemplate,
+} from './utils/types';
 import { updateDashboardCounters } from './dashboards';
+import { createMessage } from './messages';
+import { DateTime } from 'luxon';
 
 export const onDeleteApplicant = functions
   .region('asia-southeast2')
@@ -123,6 +130,79 @@ const applicantIsComplete = (
   }
   return false;
 };
+
+export const resendLinkToApplicant = functions
+  .region('asia-southeast2')
+  .firestore.document(
+    'companies/{companyId}/dashboards/{dashboardId}/applicants/{applicantId}'
+  )
+  .onUpdate(async (change, context) => {
+    const prevApplicant = change.before.data() as ApplicantWithFormId;
+    const newApplicant = change.after.data() as ApplicantWithFormId;
+    const companyId = context.params.companyId;
+    const dashboardId = context.params.dashboardId;
+    const applicantId = context.params.applicantId;
+
+    if (!prevApplicant.resendLink && newApplicant.resendLink) {
+      const companySnap = await dbDocRefs.getCompanyRef(companyId).get();
+      const company = companySnap.data();
+      if (!company) {
+        return functions.logger.error('Could not find company');
+      }
+      const dashboardSnap = await dbDocRefs
+        .getPublishedDashboardRef(companyId, dashboardId)
+        .get();
+      const dashboard = dashboardSnap.data();
+      if (!dashboard) {
+        return functions.logger.error('Could not find dashboard');
+      }
+      const EMAIL_SUBJECT =
+        'Action required: New documents needed for your application';
+
+      const DEV_URL = 'http://localhost:8080';
+      const PROD_URL = 'https://hunyo.design';
+      let FORM_LINK = '';
+      if (process.env.FUNCTIONS_EMULATOR) {
+        FORM_LINK = `${DEV_URL}/applicant/forms/${newApplicant.formId}`;
+      } else {
+        FORM_LINK = `${PROD_URL}/applicant/forms/${newApplicant.formId}`;
+      }
+      const DEADLINE = DateTime.fromMillis(
+        dashboard.deadline.toMillis()
+      ).toLocaleString({
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      });
+      const TEMPLATE: SendApplicantDocumentRequestTemplate = {
+        name: 'Applicant Documents Request',
+        data: {
+          formLink: FORM_LINK,
+          companyName: company.name,
+          companyDeadline: DEADLINE,
+        },
+      };
+      const METADATA = {
+        applicantId,
+        companyId,
+        dashboardId,
+      };
+      const MESSAGE: Message = {
+        createdAt:
+          // eslint-disable-next-line max-len
+          admin.firestore.FieldValue.serverTimestamp() as admin.firestore.Timestamp,
+        recipients: [{ email: newApplicant.email, type: 'to' }],
+        subject: EMAIL_SUBJECT,
+        body: dashboard.messages.opening,
+        fromName: company.name,
+        metadata: METADATA,
+        template: TEMPLATE,
+      };
+      await createMessage(MESSAGE);
+    } else {
+      return functions.logger.log('Applicant was not resent.');
+    }
+  });
 
 export const incrementApplicantDocs = async (
   refIds: { companyId: string; dashboardId: string; applicantId: string },

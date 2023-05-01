@@ -64,19 +64,17 @@ export const onCreateMessage = functions
     }
   });
 
-export const onUpdateMessage = functions
+export const updateApplicantLatestMessage = functions
   .region('asia-southeast2')
   .firestore.document('messages/{messageId}')
   .onUpdate(async (change, context) => {
-    const prevMessage = change.before.data() as Message;
     const newMessage = change.after.data() as Message;
     const messageId = context.params.messageId;
-    if (
-      !prevMessage.messageResponseData &&
-      newMessage.messageResponseData &&
-      newMessage.metadata
-    ) {
+    if (newMessage.metadata) {
       const { companyId, dashboardId, applicantId } = newMessage.metadata;
+      if (!companyId || !dashboardId || !applicantId) {
+        return functions.logger.log('Missing metadata to update applicant');
+      }
       const { status } = newMessage.messageResponseData as { status: string };
       await updateApplicant(
         {
@@ -90,6 +88,7 @@ export const onUpdateMessage = functions
             status: status === 'sent' ? 'Delivered' : 'Not Delivered',
             sentAt: newMessage.createdAt,
           },
+          resendLink: false, // Reset resend link if message is resent
         }
       );
     }

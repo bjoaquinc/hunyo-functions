@@ -41,10 +41,11 @@ export const {
   updateImageProperties,
 } = manageFiles;
 export const { addApplicantsToDashboard, copySamples } = dashboards;
-export const { onCreateMessage, onUpdateMessage } = messages;
+export const { onCreateMessage, updateApplicantLatestMessage } = messages;
 export const {
   updateApplicantStatusAndIncrementDashboardCounters,
   onDeleteApplicant,
+  resendLinkToApplicant,
 } = applicants;
 export const { onDocStatusUpdate, toggleStatusNotApplicable } = documents;
 export const { onDeletePage } = pages;
