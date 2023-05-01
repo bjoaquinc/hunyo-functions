@@ -83,6 +83,7 @@ export const createForm = functions
           admin.firestore.FieldValue.serverTimestamp() as admin.firestore.Timestamp,
         formId: formDocRef.id,
         name: docName,
+        alias: docs[docName].alias,
         requestedFormat: docs[docName].format,
         isRequired: docs[docName].isRequired,
         sample: docs[docName].sample,

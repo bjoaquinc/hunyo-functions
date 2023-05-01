@@ -200,6 +200,7 @@ export interface DashboardDoc {
     contentType: string;
   };
   instructions?: string;
+  alias?: string;
   docNumber: number;
 }
 
@@ -281,6 +282,7 @@ export interface ApplicantDocument {
   applicantId: string;
   companyId: string;
   name: string;
+  alias?: string;
   updatedName?: string;
   requestedFormat: 'pdf' | 'jpeg';
   isRequired: boolean;
