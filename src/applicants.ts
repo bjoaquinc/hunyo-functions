@@ -174,12 +174,14 @@ export const resendLinkToApplicant = functions
         day: 'numeric',
         year: 'numeric',
       });
+      const APPLICANT_NAME = newApplicant.name?.first;
       const TEMPLATE: SendApplicantDocumentRequestTemplate = {
         name: 'Applicant Documents Request',
         data: {
           formLink: FORM_LINK,
           companyName: company.name,
           companyDeadline: DEADLINE,
+          applicantName: APPLICANT_NAME,
         },
       };
       const METADATA = {

@@ -51,6 +51,7 @@ export const createForm = functions
         id: snapshot.id,
         status: 'not-submitted',
         email: applicantData.email,
+        name: applicantData.name,
       },
       company: {
         id: companyId,
@@ -130,17 +131,19 @@ export const onCreateForm = functions
       FORM_LINK = `${PROD_URL}/applicant/forms/${form.id}`;
     }
     const dateTime = DateTime.fromMillis(dashboard.deadline.toMillis());
-    const deadline = dateTime.toLocaleString({
+    const DEADLINE = dateTime.toLocaleString({
       month: 'long',
       day: '2-digit',
       year: 'numeric',
     });
+    const APPLICANT_NAME = form.applicant.name;
     const template: SendApplicantDocumentRequestTemplate = {
       name: 'Applicant Documents Request',
       data: {
         formLink: FORM_LINK,
         companyName: company.name,
-        companyDeadline: deadline,
+        companyDeadline: DEADLINE,
+        applicantName: APPLICANT_NAME?.first,
       },
     };
     const metadata: MessageMetadata = {

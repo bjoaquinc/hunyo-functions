@@ -50,6 +50,20 @@ export interface User {
   }[];
 }
 
+interface ApplicantItem {
+  email: string;
+  name?: {
+    first: string;
+    middle: string;
+    last: string;
+  };
+  phoneNumbers?: {
+    primary: string;
+    secondary: string;
+  };
+  address?: string;
+}
+
 export interface DraftDashboard {
   createdAt: firestore.Timestamp;
   createdBy: string;
@@ -62,8 +76,7 @@ export interface DraftDashboard {
     caption: string;
   };
   docs: { [key: string]: DashboardDoc };
-  newApplicants: string[];
-  savedApplicants: string[];
+  newApplicants: ApplicantItem[];
   messages?: {
     opening: string;
   };
@@ -83,8 +96,7 @@ export interface PublishedDashboard {
     caption: string;
   };
   docs: { [key: string]: DashboardDoc };
-  newApplicants: string[];
-  savedApplicants: string[];
+  newApplicants: ApplicantItem[];
   messages: {
     opening: string;
   };
@@ -106,6 +118,11 @@ export interface Applicant {
     middle: string;
     last: string;
   };
+  phoneNumbers?: {
+    primary: string;
+    secondary: string;
+  };
+  address?: string;
   latestMessage?: {
     id: string;
     status: ApplicantDashboardMessageStatus;
@@ -120,6 +137,7 @@ export interface Applicant {
   adminAcceptedDocs: number;
   acceptedDocs: number;
   unCheckedOptionalDocs: number;
+  // hasRejectedDocsEmail: boolean;
   resendLink?: boolean;
   isDeleted?: boolean;
 }
@@ -214,7 +232,7 @@ export interface Message {
   body: string;
   fromName?: string;
   metadata?: MessageMetadata;
-  template?: SendApplicantDocumentRequestTemplate | SendTeamInvite;
+  template?: EmailTemplate;
   updatedAt?: firestore.Timestamp;
   messageResponseData?: {
     id: string;
@@ -227,6 +245,10 @@ export interface Message {
     };
   };
 }
+export type EmailTemplate =
+  | SendApplicantDocumentRequestTemplate
+  | SendTeamInvite;
+// | SendApplicantDocumentRejectionTemplate;
 
 export interface SendApplicantDocumentRequestTemplate {
   name: 'Applicant Documents Request';
@@ -234,6 +256,7 @@ export interface SendApplicantDocumentRequestTemplate {
     formLink: string;
     companyName: string;
     companyDeadline: string;
+    applicantName?: string;
   };
 }
 
@@ -245,6 +268,15 @@ export interface SendTeamInvite {
     inviteLink: string;
   };
 }
+
+// export interface SendApplicantDocumentRejectionTemplate {
+//   name: 'Applicant Documents Rejection';
+//   data: {
+//     formLink: string;
+//     companyName: string;
+//     applicantFirstName: string;
+//   };
+// }
 
 export interface MessageMetadata {
   applicantId: string;

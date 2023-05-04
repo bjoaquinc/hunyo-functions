@@ -1,7 +1,9 @@
-import * as functions from 'firebase-functions';
+// import * as functions from 'firebase-functions';
 import mailchimp, { MessagesMessage } from '@mailchimp/mailchimp_transactional';
 import {
   Message,
+  EmailTemplate,
+  // SendApplicantDocumentRejectionTemplate,
   SendApplicantDocumentRequestTemplate,
   SendTeamInvite,
 } from './utils/types';
@@ -38,17 +40,23 @@ const sendPlainTextMessage = async (message: MessagesMessage) => {
 
 const sendTemplateMessage = async (
   message: MessagesMessage,
-  template: SendApplicantDocumentRequestTemplate | SendTeamInvite
+  template: EmailTemplate
 ) => {
-  let response;
   if (template.name === 'Applicant Documents Request') {
-    response = await emailTemplates[template.name](message, template);
-  } else {
-    response = await emailTemplates[template.name](message, template);
+    const response = await emailTemplates[template.name](message, template);
+    return response;
   }
-  // const response = await emailTemplates[template.name](message, template);
-  functions.logger.log('Sending message', response);
-  return response;
+
+  if (template.name === 'Team Invite Message') {
+    const response = await emailTemplates[template.name](message, template);
+    return response;
+  }
+
+  // if (template.name === 'Applicant Documents Rejection') {
+  //   const response = await emailTemplates[template.name](message, template);
+  //   return response;
+  // }
+  throw new Error('Template name does not exist');
 };
 
 const emailTemplates = {
@@ -73,6 +81,10 @@ const emailTemplates = {
               name: 'COMPANY_DEADLINE',
               content: template.data.companyDeadline,
             },
+            {
+              name: 'APPLICANT_NAME',
+              content: template.data.applicantName as string,
+            },
           ],
           ...message,
         },
@@ -84,6 +96,38 @@ const emailTemplates = {
       });
     return response;
   },
+  // 'Applicant Documents Rejection': async (
+  //   message: MessagesMessage,
+  //   template: SendApplicantDocumentRejectionTemplate
+  // ) => {
+  //   const client = mailchimp(process.env.MAILCHIMP_API_KEY as string);
+  //   const response = await client.messages
+  //     .sendTemplate({
+  //       message: {
+  //         global_merge_vars: [
+  //           {
+  //             name: 'FORM_LINK',
+  //             content: template.data.formLink,
+  //           },
+  //           {
+  //             name: 'COMPANY_NAME',
+  //             content: template.data.companyName,
+  //           },
+  //           {
+  //             name: 'APPLICANT_NAME',
+  //             content: template.data.applicantFirstName,
+  //           },
+  //         ],
+  //         ...message,
+  //       },
+  //       template_name: template.name,
+  //       template_content: [],
+  //     })
+  //     .catch((error) => {
+  //       throw error;
+  //     });
+  //   return response;
+  // },
   'Team Invite Message': async (
     message: MessagesMessage,
     template: SendTeamInvite

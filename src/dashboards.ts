@@ -27,7 +27,7 @@ export const addApplicantsToDashboard = functions
         (doc) => doc.isRequired
       ).length; // Only documents that are required are counted.
       const promises: Promise<void>[] = [];
-      applicants.forEach((applicantEmail) => {
+      applicants.forEach((applicant) => {
         const promise = createApplicant(
           {
             companyId,
@@ -37,7 +37,10 @@ export const addApplicantsToDashboard = functions
             createdAt:
               // eslint-disable-next-line max-len
               admin.firestore.FieldValue.serverTimestamp() as admin.firestore.Timestamp,
-            email: applicantEmail,
+            email: applicant.email,
+            phoneNumbers: applicant.phoneNumbers,
+            name: applicant.name,
+            address: applicant.address,
             dashboard: {
               id: dashboardId,
             },
@@ -46,6 +49,7 @@ export const addApplicantsToDashboard = functions
             adminAcceptedDocs: 0,
             acceptedDocs: 0,
             unCheckedOptionalDocs: 0,
+            // hasRejectedDocsEmail: false,
           }
         );
         promises.push(promise);
