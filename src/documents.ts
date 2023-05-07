@@ -1,5 +1,6 @@
 import * as functions from 'firebase-functions';
-import * as admin from 'firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
+import { bucket } from './index';
 import { dbColRefs, dbDocRefs } from './utils/db';
 import { ApplicantDocument, ApplicantPage } from './utils/types';
 // import { incrementApplicantDocs } from './applicants';
@@ -20,8 +21,8 @@ export const onDocStatusUpdate = functions
     const newDoc = change.after.data() as ApplicantDocument;
     const docId = context.params.documentId;
     const { formId, companyId, dashboardId, applicantId } = newDoc;
-    const INCREMENT = admin.firestore.FieldValue.increment(1);
-    const DECREMENT = admin.firestore.FieldValue.increment(-1);
+    const INCREMENT = FieldValue.increment(1);
+    const DECREMENT = FieldValue.increment(-1);
 
     if (prevDoc.status !== newDoc.status) {
       const status = newDoc.status;
@@ -225,7 +226,7 @@ const stitchAndUploadPDF = async (doc: ApplicantDocument & { id: string }) => {
   const newFileName = doc.updatedName || `${doc.name}.pdf`;
   // eslint-disable-next-line max-len
   const newFilePath = `companies/${doc.companyId}/dashboards/${doc.dashboardId}/final/${doc.applicantId}/${newFileName}`;
-  const file = admin.storage().bucket().file(newFilePath);
+  const file = bucket.file(newFilePath);
   await file.save(mergedDoc, {
     metadata: {
       contentType: 'application/pdf',
@@ -240,7 +241,7 @@ export const stitchPDFPages = async (pages: ApplicantPage[]) => {
   for (const page of pages) {
     // eslint-disable-next-line max-len
     const filePath = `companies/${page.companyId}/dashboards/${page.dashboardId}/fixed/${page.applicantId}/${page.name}.pdf`;
-    const [pdf] = await admin.storage().bucket().file(filePath).download();
+    const [pdf] = await bucket.file(filePath).download();
     const doc = await PDFDocument.load(pdf);
     const docPages = await pdfDoc.copyPages(doc, doc.getPageIndices());
     docPages.forEach((docPage) => {
@@ -259,8 +260,8 @@ export const toggleStatusNotApplicable = functions
   .onUpdate(async (change, context) => {
     const prevDoc = change.before.data() as ApplicantDocument;
     const newDoc = change.after.data() as ApplicantDocument;
-    const increment = admin.firestore.FieldValue.increment(1);
-    const decrement = admin.firestore.FieldValue.increment(-1);
+    const increment = FieldValue.increment(1);
+    const decrement = FieldValue.increment(-1);
     const { companyId, dashboardId, applicantId } = newDoc;
 
     if (

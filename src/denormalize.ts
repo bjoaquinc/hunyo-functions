@@ -1,5 +1,5 @@
 import * as functions from 'firebase-functions';
-import * as admin from 'firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 
 import { db } from './index';
 import { Company, User } from './utils/types';
@@ -17,7 +17,7 @@ export const addUserToCompany = functions
     } else {
       if (!companyData.users.includes(snapshot.id)) {
         await companyRef.update({
-          users: admin.firestore.FieldValue.arrayUnion(snapshot.id),
+          users: FieldValue.arrayUnion(snapshot.id),
         });
         return functions.logger.log(
           `Added ${userData.name.first} ${userData.name.last} to company list.`

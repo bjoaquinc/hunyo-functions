@@ -1,5 +1,5 @@
 import * as functions from 'firebase-functions';
-import * as admin from 'firebase-admin';
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import {
   Form,
   Applicant,
@@ -44,9 +44,7 @@ export const createForm = functions
 
     // Create Form for Applicant
     const formDocRef = await formsRef.add({
-      createdAt:
-        // eslint-disable-next-line max-len
-        admin.firestore.FieldValue.serverTimestamp() as admin.firestore.Timestamp,
+      createdAt: FieldValue.serverTimestamp() as Timestamp,
       applicant: {
         id: snapshot.id,
         status: 'not-submitted',
@@ -79,9 +77,7 @@ export const createForm = functions
     const docs = dashboardData.docs;
     Object.keys(docs).forEach((docName) => {
       const promise = createDocument(companyId, {
-        createdAt:
-          // eslint-disable-next-line max-len
-          admin.firestore.FieldValue.serverTimestamp() as admin.firestore.Timestamp,
+        createdAt: FieldValue.serverTimestamp() as Timestamp,
         formId: formDocRef.id,
         name: docName,
         alias: docs[docName].alias,
@@ -152,9 +148,7 @@ export const onCreateForm = functions
       applicantId: applicant.id,
     };
     const message: Message = {
-      createdAt:
-        // eslint-disable-next-line max-len
-        admin.firestore.FieldValue.serverTimestamp() as admin.firestore.Timestamp,
+      createdAt: FieldValue.serverTimestamp() as Timestamp,
       recipients: [{ email: applicant.email, type: 'to' }],
       subject: EMAIL_SUBJECT,
       body: dashboard.messages.opening,

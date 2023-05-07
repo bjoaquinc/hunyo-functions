@@ -1,5 +1,9 @@
 import * as functions from 'firebase-functions';
-import * as admin from 'firebase-admin';
+import {
+  FieldValue,
+  Timestamp,
+  DocumentReference,
+} from 'firebase-admin/firestore';
 import { dbColRefs, dbDocRefs } from './utils/db';
 import {
   Applicant,
@@ -20,8 +24,7 @@ export const onDeleteApplicant = functions
     const prevApplicant = change.before.data() as Applicant;
     const newApplicant = change.after.data() as Applicant;
     if (!prevApplicant.isDeleted && newApplicant.isDeleted) {
-      const decrement = (count: number) =>
-        admin.firestore.FieldValue.increment(count);
+      const decrement = (count: number) => FieldValue.increment(count);
       const companyId = context.params.companyId;
       const dashboardId = context.params.dashboardId;
       const dashboardRef = dbDocRefs.getPublishedDashboardRef(
@@ -66,8 +69,7 @@ export const updateApplicantStatusAndIncrementDashboardCounters = functions
   .onUpdate(async (change, context) => {
     const prevApplicant = change.before.data() as Applicant;
     const newApplicant = change.after.data() as Applicant;
-    const applicantRef = change.after
-      .ref as admin.firestore.DocumentReference<Applicant>;
+    const applicantRef = change.after.ref as DocumentReference<Applicant>;
     const companyId = context.params.companyId;
     const dashboardId = context.params.dashboardId;
 
@@ -192,7 +194,7 @@ export const resendLinkToApplicant = functions
       const MESSAGE: Message = {
         createdAt:
           // eslint-disable-next-line max-len
-          admin.firestore.FieldValue.serverTimestamp() as admin.firestore.Timestamp,
+          FieldValue.serverTimestamp() as Timestamp,
         recipients: [{ email: newApplicant.email, type: 'to' }],
         subject: EMAIL_SUBJECT,
         body: dashboard.messages.opening,
@@ -217,7 +219,7 @@ export const incrementApplicantDocs = async (
     dashboardId,
     applicantId
   );
-  const increment = admin.firestore.FieldValue.increment(incrementNumber);
+  const increment = FieldValue.increment(incrementNumber);
   await applicantRef.update({
     [docsType]: increment,
   });

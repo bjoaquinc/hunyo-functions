@@ -100,7 +100,7 @@ const emailTemplates = {
   //   message: MessagesMessage,
   //   template: SendApplicantDocumentRejectionTemplate
   // ) => {
-  //   const client = mailchimp(process.env.MAILCHIMP_API_KEY as string);
+  //   const client = mailchimp("md-36uq0tM9ZEoaZ9ckcedpGQ");
   //   const response = await client.messages
   //     .sendTemplate({
   //       message: {

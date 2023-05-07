@@ -1,5 +1,5 @@
 import { db } from '../index';
-import * as admin from 'firebase-admin';
+import type { QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import {
   Company,
   User,
@@ -16,8 +16,7 @@ import {
 export const converter = <T>() => ({
   toFirestore: (data: T) => data,
   // eslint-disable-next-line max-len
-  fromFirestore: (snap: admin.firestore.QueryDocumentSnapshot) =>
-    snap.data() as T,
+  fromFirestore: (snap: QueryDocumentSnapshot) => snap.data() as T,
 });
 
 export const dbColRefs = {

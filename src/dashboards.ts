@@ -1,9 +1,12 @@
 import * as functions from 'firebase-functions';
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
+import { getStorage } from 'firebase-admin/storage';
 import { DraftDashboard, PublishedDashboard } from './utils/types';
-import * as admin from 'firebase-admin';
 import { dbDocRefs } from './utils/db';
 import { createApplicant } from './applicants';
 import { storagePaths } from './utils/storage';
+
+const storage = getStorage();
 
 export const addApplicantsToDashboard = functions
   .region('asia-southeast2')
@@ -34,9 +37,7 @@ export const addApplicantsToDashboard = functions
             dashboardId,
           },
           {
-            createdAt:
-              // eslint-disable-next-line max-len
-              admin.firestore.FieldValue.serverTimestamp() as admin.firestore.Timestamp,
+            createdAt: FieldValue.serverTimestamp() as Timestamp,
             email: applicant.email,
             phoneNumbers: applicant.phoneNumbers,
             name: applicant.name,
@@ -55,8 +56,7 @@ export const addApplicantsToDashboard = functions
         promises.push(promise);
       });
       await Promise.all(promises);
-      const increment = (quantity: number) =>
-        admin.firestore.FieldValue.increment(quantity);
+      const increment = (quantity: number) => FieldValue.increment(quantity);
       await change.after.ref.update({
         newApplicants: [],
         applicantsCount: increment(applicants.length),
@@ -76,7 +76,7 @@ export const updateDashboardCounters = async (
     | 'messagesSentCount',
   count: number
 ) => {
-  const increment = admin.firestore.FieldValue.increment(count);
+  const increment = FieldValue.increment(count);
   const dashboardRef = dbDocRefs.getPublishedDashboardRef(
     companyId,
     dashboardId
@@ -113,8 +113,7 @@ export const copySamples = functions
           storagePaths.getSamplePath(companyId, docSnap.id, sampleName);
 
         sampleNames.forEach((name) => {
-          const promise = admin
-            .storage()
+          const promise = storage
             .bucket()
             .file(oldFilePath(name))
             .copy(newFilePath(name));

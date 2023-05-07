@@ -1,5 +1,5 @@
 import * as functions from 'firebase-functions';
-import * as admin from 'firebase-admin';
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { Invite, Message, User } from './utils/types';
 import { dbDocRefs } from './utils/db';
 import { createMessage } from './messages';
@@ -28,7 +28,7 @@ export const onCreateInvite = functions
       const message: Message = {
         createdAt:
           // eslint-disable-next-line max-len
-          admin.firestore.FieldValue.serverTimestamp() as admin.firestore.Timestamp,
+          FieldValue.serverTimestamp() as Timestamp,
         // eslint-disable-next-line max-len
         subject: `${userData.name.first} ${userData.name.last} has invited you to join ${company.name} on Hunyo`,
         recipients: [

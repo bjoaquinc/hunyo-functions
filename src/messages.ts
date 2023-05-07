@@ -1,6 +1,6 @@
 /* eslint-disable camelcase */
 import { dbColRefs, dbDocRefs } from './utils/db';
-import * as admin from 'firebase-admin';
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import * as functions from 'firebase-functions';
 import { Message } from './utils/types';
 import { sendMessage } from './mailchimp';
@@ -12,8 +12,7 @@ export const createMessage = async (message: Message) => {
   const { subject, recipients, body, fromName, metadata, template } = message;
   functions.logger.log('message', message);
   await messagesRef.add({
-    createdAt:
-      admin.firestore.FieldValue.serverTimestamp() as admin.firestore.Timestamp,
+    createdAt: FieldValue.serverTimestamp() as Timestamp,
     subject,
     recipients,
     body,
@@ -30,8 +29,7 @@ export const updateMessage = async (
   const messageRef = dbDocRefs.getMessageRef(messageId);
   await messageRef.update({
     ...messageData,
-    updatedAt:
-      admin.firestore.FieldValue.serverTimestamp() as admin.firestore.Timestamp,
+    updatedAt: FieldValue.serverTimestamp() as Timestamp,
   });
 };
 

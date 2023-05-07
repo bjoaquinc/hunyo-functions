@@ -1,9 +1,8 @@
 import * as functions from 'firebase-functions';
-import * as admin from 'firebase-admin';
 import sharp from 'sharp';
 import PDFDocument from 'pdfkit';
 import axios from 'axios';
-const bucket = admin.storage().bucket();
+import { bucket } from './index';
 import FormData from 'form-data';
 import { ApplicantPage, ApplicantPageImageProperties } from './utils/types';
 import { storagePaths } from './utils/storage';

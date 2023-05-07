@@ -1,9 +1,27 @@
 /* eslint-disable max-len */
 /* eslint-disable object-curly-spacing */
 /* eslint-disable indent */
-import * as admin from 'firebase-admin';
+
+// Initialize App
+import { initializeApp } from 'firebase-admin/app';
+
+const app = initializeApp();
+
+// Initialize Firestore
+import { getFirestore } from 'firebase-admin/firestore';
+
+export const db = getFirestore(app);
+db.settings({ ignoreUndefinedProperties: true });
+
+// Initialize Storage
+import { getStorage } from 'firebase-admin/storage';
+const storage = getStorage(app);
+export const bucket = storage.bucket();
+
+// Import Functions
 import * as functions from 'firebase-functions';
-admin.initializeApp();
+
+// Initialize Amplitude
 import * as amplitude from '@amplitude/analytics-node';
 if (process.env.FUNCTIONS_EMULATOR === 'true') {
   functions.logger.log('Running in emulator');
@@ -12,10 +30,6 @@ if (process.env.FUNCTIONS_EMULATOR === 'true') {
   functions.logger.log('Running in production');
   amplitude.init(process.env.AMPLITUDE_API_KEY_PROD as string);
 }
-export const db = admin.firestore();
-db.settings({
-  ignoreUndefinedProperties: true,
-});
 
 import * as privateData from './private';
 import * as denormalize from './denormalize';
