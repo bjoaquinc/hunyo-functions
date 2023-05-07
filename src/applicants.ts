@@ -126,7 +126,7 @@ const applicantIsComplete = (
   if (
     newApplicant.status === 'incomplete' &&
     newApplicant.totalDocs === newApplicant.acceptedDocs &&
-    prevApplicant.totalDocs > prevApplicant.acceptedDocs
+    prevApplicant.totalDocs !== prevApplicant.acceptedDocs
   ) {
     return true;
   }
