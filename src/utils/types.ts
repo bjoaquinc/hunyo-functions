@@ -1,4 +1,4 @@
-import { firestore } from 'firebase-admin';
+import { Timestamp } from 'firebase-admin/firestore';
 
 // Hardcoded types
 
@@ -14,7 +14,7 @@ export type ApplicantDashboardMessageStatus =
 // Firebase models
 
 export interface Invite {
-  createdAt: firestore.Timestamp;
+  createdAt: Timestamp;
   company: {
     name: string;
     id: string;
@@ -26,14 +26,14 @@ export interface Invite {
 }
 
 export interface Company {
-  createdAt: firestore.Timestamp;
+  createdAt: Timestamp;
   name: string;
   users: string[];
   logo?: string;
 }
 
 export interface User {
-  createdAt: firestore.Timestamp;
+  createdAt: Timestamp;
   company: {
     id: string;
     name: string;
@@ -65,12 +65,12 @@ interface ApplicantItem {
 }
 
 export interface DraftDashboard {
-  createdAt: firestore.Timestamp;
+  createdAt: Timestamp;
   createdBy: string;
   country: string;
   job: string;
   title: string;
-  deadline: firestore.Timestamp;
+  deadline: Timestamp;
   formContent?: {
     header: string;
     caption: string;
@@ -85,12 +85,12 @@ export interface DraftDashboard {
 }
 
 export interface PublishedDashboard {
-  createdAt: firestore.Timestamp;
+  createdAt: Timestamp;
   createdBy: string;
   country: string;
   job: string;
   title: string;
-  deadline: firestore.Timestamp;
+  deadline: Timestamp;
   formContent: {
     header: string;
     caption: string;
@@ -101,7 +101,7 @@ export interface PublishedDashboard {
     opening: string;
   };
   isPublished: true;
-  publishedAt: firestore.Timestamp;
+  publishedAt: Timestamp;
   applicantsCount?: number;
   incompleteApplicantsCount?: number;
   completeApplicantsCount?: number;
@@ -111,7 +111,7 @@ export interface PublishedDashboard {
 }
 
 export interface Applicant {
-  createdAt: firestore.Timestamp;
+  createdAt: Timestamp;
   email: string;
   name?: {
     first: string;
@@ -126,11 +126,11 @@ export interface Applicant {
   latestMessage?: {
     id: string;
     status: ApplicantDashboardMessageStatus;
-    sentAt: firestore.Timestamp;
+    sentAt: Timestamp;
   };
   dashboard: {
     id: string;
-    submittedAt?: firestore.Timestamp;
+    submittedAt?: Timestamp;
   };
   status: ApplicantStatus;
   totalDocs: number;
@@ -147,7 +147,7 @@ export interface ApplicantWithFormId extends Applicant {
 }
 
 export interface Form {
-  createdAt: firestore.Timestamp;
+  createdAt: Timestamp;
   applicant: {
     id: string;
     status: ApplicantStatus;
@@ -157,6 +157,10 @@ export interface Form {
       last: string;
     };
     email: string;
+    phoneNumbers?: {
+      primary: string;
+      secondary: string;
+    };
   };
   company: {
     id: string;
@@ -169,7 +173,7 @@ export interface Form {
       header: string;
       caption: string;
     };
-    deadline: firestore.Timestamp;
+    deadline: Timestamp;
     job: string;
     country: string;
     messages: {
@@ -181,7 +185,7 @@ export interface Form {
 }
 
 export interface AcceptedPage {
-  createdAt: firestore.Timestamp;
+  createdAt: Timestamp;
   applicantId: string;
   dashboardId: string;
   companyId: string;
@@ -195,7 +199,7 @@ export interface AcceptedPage {
 }
 
 export interface RejectedPage {
-  createdAt: firestore.Timestamp;
+  createdAt: Timestamp;
   applicantId: string;
   dashboardId: string;
   companyId: string;
@@ -222,8 +226,26 @@ export interface DashboardDoc {
   docNumber: number;
 }
 
+type MessageTypes = 'sms' | 'email';
+
 export interface Message {
-  createdAt: firestore.Timestamp;
+  createdAt: Timestamp;
+  messageTypes: MessageTypes[];
+  emailData?: EmailData | null;
+  smsData?: SMSData | null;
+  updatedAt?: Timestamp;
+}
+
+type SMSStatus = 'Pending' | 'Sent' | 'Failed' | 'Refunded';
+
+export interface SMSData {
+  phoneNumber: string;
+  message: string;
+  senderName?: string;
+  status?: SMSStatus;
+}
+
+export interface EmailData {
   subject: string;
   recipients: {
     email: string;
@@ -233,7 +255,6 @@ export interface Message {
   fromName?: string;
   metadata?: MessageMetadata;
   template?: EmailTemplate;
-  updatedAt?: firestore.Timestamp;
   messageResponseData?: {
     id: string;
     status: string;
@@ -245,6 +266,7 @@ export interface Message {
     };
   };
 }
+
 export type EmailTemplate =
   | SendApplicantDocumentRequestTemplate
   | SendTeamInvite;
@@ -308,7 +330,7 @@ export type RejectionReasons =
   | 'other';
 
 export interface ApplicantDocument {
-  createdAt: firestore.Timestamp;
+  createdAt: Timestamp;
   formId: string;
   dashboardId: string;
   applicantId: string;
@@ -330,11 +352,11 @@ export interface ApplicantDocument {
   submissionCount: number;
   restitchDocument?: boolean;
   isUpdating: boolean;
-  delayedUntil?: firestore.Timestamp;
+  delayedUntil?: Timestamp;
   rejection?: {
     reasons: RejectionReasons[];
     rejectedBy: string;
-    rejectedAt: firestore.Timestamp;
+    rejectedAt: Timestamp;
     message?: string;
   } | null;
 }
@@ -344,14 +366,14 @@ export interface ApplicantDocumentWithRejection
   rejection: {
     reasons: RejectionReasons[];
     rejectedBy: string;
-    rejectedAt: firestore.Timestamp;
+    rejectedAt: Timestamp;
     message?: string;
   };
 }
 
 export interface ApplicantPage {
-  createdAt: firestore.Timestamp;
-  updatedAt?: firestore.Timestamp;
+  createdAt: Timestamp;
+  updatedAt?: Timestamp;
   docId: string;
   formId: string;
   dashboardId: string;
@@ -377,14 +399,14 @@ export interface ApplicantPageImageProperties {
 }
 
 export interface Accept {
-  createdAt: firestore.Timestamp;
+  createdAt: Timestamp;
   docId: string;
   applicantId: string;
   acceptedBy: string;
 }
 
 export interface Reject {
-  createdAt: firestore.Timestamp;
+  createdAt: Timestamp;
   docId: string;
   applicantId: string;
   rejectedBy: string;

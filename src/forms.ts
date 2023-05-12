@@ -6,12 +6,15 @@ import {
   Message,
   MessageMetadata,
   SendApplicantDocumentRequestTemplate,
+  EmailData,
+  SMSData,
 } from './utils/types';
 import { updateApplicant } from './applicants';
 import { createMessage } from './messages';
 import { dbDocRefs, dbColRefs } from './utils/db';
 import { createDocument } from './documents';
 import { DateTime } from 'luxon';
+import { getDocumentsRequestMessage } from './utils/sms_messages';
 
 export const createForm = functions
   .region('asia-southeast2')
@@ -50,6 +53,7 @@ export const createForm = functions
         status: 'not-submitted',
         email: applicantData.email,
         name: applicantData.name,
+        phoneNumbers: applicantData.phoneNumbers,
       },
       company: {
         id: companyId,
@@ -116,8 +120,6 @@ export const onCreateForm = functions
       id: string;
     };
     const { company, dashboard, applicant } = form;
-    const EMAIL_SUBJECT =
-      'Action required: New documents needed for your application';
     const DEV_URL = 'http://localhost:8080';
     const PROD_URL = 'https://hunyo.design';
     let FORM_LINK = '';
@@ -126,6 +128,10 @@ export const onCreateForm = functions
     } else {
       FORM_LINK = `${PROD_URL}/applicant/forms/${form.id}`;
     }
+
+    // Collect email data
+    const EMAIL_SUBJECT =
+      'Action required: New documents needed for your application';
     const dateTime = DateTime.fromMillis(dashboard.deadline.toMillis());
     const DEADLINE = dateTime.toLocaleString({
       month: 'long',
@@ -147,14 +153,31 @@ export const onCreateForm = functions
       dashboardId: dashboard.id,
       applicantId: applicant.id,
     };
-    const message: Message = {
-      createdAt: FieldValue.serverTimestamp() as Timestamp,
+    const emailData: EmailData = {
       recipients: [{ email: applicant.email, type: 'to' }],
       subject: EMAIL_SUBJECT,
       body: dashboard.messages.opening,
       fromName: company.name,
       metadata: metadata,
       template,
+    };
+
+    // Collect sms data
+    const PHONE_NUMBER = applicant.phoneNumbers;
+    const smsData: SMSData = {
+      phoneNumber: PHONE_NUMBER?.primary as string,
+      message: getDocumentsRequestMessage(
+        applicant.name?.first as string,
+        company.name,
+        FORM_LINK
+      ),
+    };
+    // Send messages
+    const message: Message = {
+      createdAt: FieldValue.serverTimestamp() as Timestamp,
+      messageTypes: ['email', 'sms'],
+      emailData,
+      smsData,
     };
     await createMessage(message);
   });

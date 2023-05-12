@@ -1,29 +1,29 @@
 // import * as functions from 'firebase-functions';
 import mailchimp, { MessagesMessage } from '@mailchimp/mailchimp_transactional';
 import {
-  Message,
   EmailTemplate,
   // SendApplicantDocumentRejectionTemplate,
   SendApplicantDocumentRequestTemplate,
   SendTeamInvite,
+  EmailData,
 } from './utils/types';
 
-export const sendMessage = async (message: Message) => {
+export const sendMessage = async (emailData: EmailData) => {
   const mailchimpMessage: MessagesMessage = {
     from_email: 'info@hunyo.com',
-    from_name: message.fromName,
-    subject: message.subject,
-    text: message.body,
-    html: message.body,
-    to: message.recipients,
+    from_name: emailData.fromName,
+    subject: emailData.subject,
+    text: emailData.body,
+    html: emailData.body,
+    to: emailData.recipients,
     track_opens: true,
     track_clicks: true,
   };
 
-  if (message.template) {
+  if (emailData.template) {
     const response = await sendTemplateMessage(
       mailchimpMessage,
-      message.template
+      emailData.template
     );
     return response;
   } else {

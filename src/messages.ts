@@ -6,19 +6,17 @@ import { Message } from './utils/types';
 import { sendMessage } from './mailchimp';
 import { updateApplicant } from './applicants';
 import { MessagesSendResponse } from '@mailchimp/mailchimp_transactional';
+import { sendSMS } from './semaphore';
 
-export const createMessage = async (message: Message) => {
+export const createMessage = async (message: Omit<Message, 'createdAt'>) => {
   const messagesRef = dbColRefs.messagesRef;
-  const { subject, recipients, body, fromName, metadata, template } = message;
+  // const { messageTypes, emailData } = message;
+  // eslint-disable-next-line max-len
+  // const { subject, recipients, body, fromName, metadata, template } = message;
   functions.logger.log('message', message);
   await messagesRef.add({
     createdAt: FieldValue.serverTimestamp() as Timestamp,
-    subject,
-    recipients,
-    body,
-    fromName,
-    metadata,
-    template,
+    ...message,
   });
 };
 
@@ -28,8 +26,8 @@ export const updateMessage = async (
 ) => {
   const messageRef = dbDocRefs.getMessageRef(messageId);
   await messageRef.update({
-    ...messageData,
     updatedAt: FieldValue.serverTimestamp() as Timestamp,
+    ...messageData,
   });
 };
 
@@ -42,21 +40,32 @@ export const onCreateMessage = functions
   .onCreate(async (snap, context) => {
     try {
       const message = snap.data() as Message;
+      const { messageTypes, emailData, smsData } = message;
       const messageId = context.params.messageId;
-      const responseList = (await sendMessage(
-        message
-      )) as MessagesSendResponse[];
-      functions.logger.log(responseList);
-      const response = responseList[0];
-      const { _id, reject_reason, status } = response;
-      const messageResponseData = {
-        id: _id,
-        status,
-        rejectReason: reject_reason,
-      };
-      await updateMessage(messageId, {
-        messageResponseData,
-      });
+
+      // Send email
+      if (messageTypes.includes('email') && emailData) {
+        const responseList = (await sendMessage(
+          emailData
+        )) as MessagesSendResponse[];
+        functions.logger.log(responseList);
+        const response = responseList[0];
+        const { _id, reject_reason, status } = response;
+        const messageResponseData = {
+          id: _id,
+          status,
+          rejectReason: reject_reason,
+        };
+        await updateMessage(messageId, {
+          ['emailData.messagResponseData']: messageResponseData,
+        });
+      }
+
+      // Send sms
+      if (messageTypes.includes('sms') && smsData) {
+        functions.logger.log('Send sms');
+        await sendSMS(smsData);
+      }
     } catch (error) {
       functions.logger.log(error);
     }
@@ -68,12 +77,13 @@ export const updateApplicantLatestMessage = functions
   .onUpdate(async (change, context) => {
     const newMessage = change.after.data() as Message;
     const messageId = context.params.messageId;
-    if (newMessage.metadata) {
-      const { companyId, dashboardId, applicantId } = newMessage.metadata;
+    const { emailData } = newMessage;
+    if (emailData && emailData.metadata) {
+      const { companyId, dashboardId, applicantId } = emailData.metadata;
       if (!companyId || !dashboardId || !applicantId) {
         return functions.logger.log('Missing metadata to update applicant');
       }
-      const { status } = newMessage.messageResponseData as { status: string };
+      const { status } = emailData.messageResponseData as { status: string };
       await updateApplicant(
         {
           companyId,

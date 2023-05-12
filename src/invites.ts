@@ -26,25 +26,26 @@ export const onCreateInvite = functions
         INVITE_LINK = `https://hunyo.design/invites/${inviteId}`;
       }
       const message: Message = {
-        createdAt:
+        createdAt: FieldValue.serverTimestamp() as Timestamp,
+        messageTypes: ['email'],
+        emailData: {
           // eslint-disable-next-line max-len
-          FieldValue.serverTimestamp() as Timestamp,
-        // eslint-disable-next-line max-len
-        subject: `${userData.name.first} ${userData.name.last} has invited you to join ${company.name} on Hunyo`,
-        recipients: [
-          {
-            email: inviteData.email,
-            type: 'to',
-          },
-        ],
-        body: 'Test',
-        fromName: 'Hunyo Team',
-        template: {
-          name: 'Team Invite Message',
-          data: {
-            teamMemberName: `${userData.name.first} ${userData.name.last}`,
-            companyName: company.name,
-            inviteLink: INVITE_LINK,
+          subject: `${userData.name.first} ${userData.name.last} has invited you to join ${company.name} on Hunyo`,
+          recipients: [
+            {
+              email: inviteData.email,
+              type: 'to',
+            },
+          ],
+          body: 'Test',
+          fromName: 'Hunyo Team',
+          template: {
+            name: 'Team Invite Message',
+            data: {
+              teamMemberName: `${userData.name.first} ${userData.name.last}`,
+              companyName: company.name,
+              inviteLink: INVITE_LINK,
+            },
           },
         },
       };

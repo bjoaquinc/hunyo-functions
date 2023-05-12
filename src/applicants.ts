@@ -195,12 +195,15 @@ export const resendLinkToApplicant = functions
         createdAt:
           // eslint-disable-next-line max-len
           FieldValue.serverTimestamp() as Timestamp,
-        recipients: [{ email: newApplicant.email, type: 'to' }],
-        subject: EMAIL_SUBJECT,
-        body: dashboard.messages.opening,
-        fromName: company.name,
-        metadata: METADATA,
-        template: TEMPLATE,
+        messageTypes: ['email'],
+        emailData: {
+          recipients: [{ email: newApplicant.email, type: 'to' }],
+          subject: EMAIL_SUBJECT,
+          body: dashboard.messages.opening,
+          fromName: company.name,
+          metadata: METADATA,
+          template: TEMPLATE,
+        },
       };
       await createMessage(MESSAGE);
     } else {
