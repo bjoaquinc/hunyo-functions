@@ -61,7 +61,11 @@ export const {
   onDeleteApplicant,
   resendLinkToApplicant,
 } = applicants;
-export const { onDocStatusUpdate, toggleStatusNotApplicable } = documents;
+export const {
+  onDocStatusUpdate,
+  toggleStatusNotApplicable,
+  restitchAndUploadPDF,
+} = documents;
 export const { onDeletePage } = pages;
 export const { onCreateInvite } = invites;
 // export const { addFormIdsToApplicant } = maintenance;

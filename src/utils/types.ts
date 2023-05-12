@@ -328,6 +328,7 @@ export interface ApplicantDocument {
   docNumber: number;
   totalPages: number;
   submissionCount: number;
+  restitchDocument?: boolean;
   isUpdating: boolean;
   delayedUntil?: firestore.Timestamp;
   rejection?: {
