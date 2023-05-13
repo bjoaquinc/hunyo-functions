@@ -10,9 +10,6 @@ import { sendSMS } from './semaphore';
 
 export const createMessage = async (message: Omit<Message, 'createdAt'>) => {
   const messagesRef = dbColRefs.messagesRef;
-  // const { messageTypes, emailData } = message;
-  // eslint-disable-next-line max-len
-  // const { subject, recipients, body, fromName, metadata, template } = message;
   functions.logger.log('message', message);
   await messagesRef.add({
     createdAt: FieldValue.serverTimestamp() as Timestamp,
@@ -34,7 +31,7 @@ export const updateMessage = async (
 export const onCreateMessage = functions
   .region('asia-southeast2')
   .runWith({
-    secrets: ['MAILCHIMP_API_KEY'],
+    secrets: ['MAILCHIMP_API_KEY', 'SEMAPHORE_API_KEY'],
   })
   .firestore.document('messages/{messageId}')
   .onCreate(async (snap, context) => {
@@ -57,7 +54,7 @@ export const onCreateMessage = functions
           rejectReason: reject_reason,
         };
         await updateMessage(messageId, {
-          ['emailData.messagResponseData']: messageResponseData,
+          ['emailData.messageResponseData']: messageResponseData,
         });
       }
 
@@ -78,7 +75,8 @@ export const updateApplicantLatestMessage = functions
     const newMessage = change.after.data() as Message;
     const messageId = context.params.messageId;
     const { emailData } = newMessage;
-    if (emailData && emailData.metadata) {
+    functions.logger.log('Response data: ', emailData?.messageResponseData);
+    if (emailData && emailData.metadata && emailData.messageResponseData) {
       const { companyId, dashboardId, applicantId } = emailData.metadata;
       if (!companyId || !dashboardId || !applicantId) {
         return functions.logger.log('Missing metadata to update applicant');

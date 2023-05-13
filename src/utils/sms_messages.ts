@@ -3,7 +3,9 @@ export const getDocumentsRequestMessage = (
   companyName: string,
   applicantURL: string
 ) => {
-  // eslint-disable-next-line max-len
-  const message = `Hi ${applicantName}, this is ${companyName}. Please click on this link to submit your documentary requirements: ${applicantURL}`;
+  const message = `Hi ${applicantName}, this is ${
+    companyName + (companyName.endsWith('.') ? '' : '.')
+    // eslint-disable-next-line max-len
+  } Please click on this link to submit your documentary requirements: ${applicantURL}`;
   return message;
 };

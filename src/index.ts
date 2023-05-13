@@ -45,7 +45,8 @@ import * as invites from './invites';
 
 export const { addCompanyUserRole } = privateData;
 export const { addUserToCompany } = denormalize;
-export const { createForm, onApplicantNameChange, onCreateForm } = forms;
+export const { createForm, onApplicantNameChange, sendFormLinkToApplicant } =
+  forms;
 export const {
   onImageUpload,
   onPDFUpload,

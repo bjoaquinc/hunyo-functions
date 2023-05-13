@@ -112,7 +112,7 @@ export const updateForm = async (
   });
 };
 
-export const onCreateForm = functions
+export const sendFormLinkToApplicant = functions
   .region('asia-southeast2')
   .firestore.document('forms/{formId}')
   .onCreate(async (snapshot, context) => {
@@ -120,6 +120,21 @@ export const onCreateForm = functions
       id: string;
     };
     const { company, dashboard, applicant } = form;
+
+    // Get company data
+    const companyRef = dbDocRefs.getCompanyRef(company.id);
+    const companySnap = await companyRef.get();
+    const companyData = companySnap.data();
+    if (!companyData) throw new Error('Could not find company with this id');
+    const { messageTypes } = companyData;
+
+    // Create message
+    const message: Message = {
+      createdAt: FieldValue.serverTimestamp() as Timestamp,
+      messageTypes,
+    };
+
+    // Generate Applicant URL
     const DEV_URL = 'http://localhost:8080';
     const PROD_URL = 'https://hunyo.design';
     let FORM_LINK = '';
@@ -129,56 +144,56 @@ export const onCreateForm = functions
       FORM_LINK = `${PROD_URL}/applicant/forms/${form.id}`;
     }
 
-    // Collect email data
-    const EMAIL_SUBJECT =
-      'Action required: New documents needed for your application';
-    const dateTime = DateTime.fromMillis(dashboard.deadline.toMillis());
-    const DEADLINE = dateTime.toLocaleString({
-      month: 'long',
-      day: '2-digit',
-      year: 'numeric',
-    });
-    const APPLICANT_NAME = form.applicant.name;
-    const template: SendApplicantDocumentRequestTemplate = {
-      name: 'Applicant Documents Request',
-      data: {
-        formLink: FORM_LINK,
-        companyName: company.name,
-        companyDeadline: DEADLINE,
-        applicantName: APPLICANT_NAME?.first,
-      },
-    };
-    const metadata: MessageMetadata = {
-      companyId: company.id,
-      dashboardId: dashboard.id,
-      applicantId: applicant.id,
-    };
-    const emailData: EmailData = {
-      recipients: [{ email: applicant.email, type: 'to' }],
-      subject: EMAIL_SUBJECT,
-      body: dashboard.messages.opening,
-      fromName: company.name,
-      metadata: metadata,
-      template,
-    };
+    // Get email data
+    if (messageTypes.includes('email')) {
+      const EMAIL_SUBJECT =
+        'Action required: New documents needed for your application';
+      const dateTime = DateTime.fromMillis(dashboard.deadline.toMillis());
+      const DEADLINE = dateTime.toLocaleString({
+        month: 'long',
+        day: '2-digit',
+        year: 'numeric',
+      });
+      const APPLICANT_NAME = form.applicant.name;
+      const template: SendApplicantDocumentRequestTemplate = {
+        name: 'Applicant Documents Request',
+        data: {
+          formLink: FORM_LINK,
+          companyName: company.name,
+          companyDeadline: DEADLINE,
+          applicantName: APPLICANT_NAME?.first,
+        },
+      };
+      const metadata: MessageMetadata = {
+        companyId: company.id,
+        dashboardId: dashboard.id,
+        applicantId: applicant.id,
+      };
+      const emailData: EmailData = {
+        recipients: [{ email: applicant.email, type: 'to' }],
+        subject: EMAIL_SUBJECT,
+        body: dashboard.messages.opening,
+        fromName: company.name,
+        metadata: metadata,
+        template,
+      };
+      message.emailData = emailData;
+    }
 
-    // Collect sms data
-    const PHONE_NUMBER = applicant.phoneNumbers;
-    const smsData: SMSData = {
-      phoneNumber: PHONE_NUMBER?.primary as string,
-      message: getDocumentsRequestMessage(
-        applicant.name?.first as string,
-        company.name,
-        FORM_LINK
-      ),
-    };
-    // Send messages
-    const message: Message = {
-      createdAt: FieldValue.serverTimestamp() as Timestamp,
-      messageTypes: ['email', 'sms'],
-      emailData,
-      smsData,
-    };
+    // Get sms data
+    if (messageTypes.includes('sms') && applicant.phoneNumbers) {
+      const PHONE_NUMBER = applicant.phoneNumbers.primary;
+      const smsData: SMSData = {
+        phoneNumber: PHONE_NUMBER,
+        message: getDocumentsRequestMessage(
+          applicant.name?.first as string,
+          company.name,
+          FORM_LINK
+        ),
+      };
+      message.smsData = smsData;
+    }
+
     await createMessage(message);
   });
 

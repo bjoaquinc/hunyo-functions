@@ -30,6 +30,7 @@ export interface Company {
   name: string;
   users: string[];
   logo?: string;
+  messageTypes: MessageType[];
 }
 
 export interface User {
@@ -226,11 +227,11 @@ export interface DashboardDoc {
   docNumber: number;
 }
 
-type MessageTypes = 'sms' | 'email';
+type MessageType = 'sms' | 'email';
 
 export interface Message {
   createdAt: Timestamp;
-  messageTypes: MessageTypes[];
+  messageTypes: MessageType[];
   emailData?: EmailData | null;
   smsData?: SMSData | null;
   updatedAt?: Timestamp;
@@ -290,15 +291,6 @@ export interface SendTeamInvite {
     inviteLink: string;
   };
 }
-
-// export interface SendApplicantDocumentRejectionTemplate {
-//   name: 'Applicant Documents Rejection';
-//   data: {
-//     formLink: string;
-//     companyName: string;
-//     applicantFirstName: string;
-//   };
-// }
 
 export interface MessageMetadata {
   applicantId: string;
