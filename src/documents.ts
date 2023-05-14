@@ -24,94 +24,67 @@ export const onDocStatusUpdate = functions
     const INCREMENT = FieldValue.increment(1);
     const DECREMENT = FieldValue.increment(-1);
 
-    if (prevDoc.status !== newDoc.status) {
-      const status = newDoc.status;
-      // Submitted by Applicant
-      if (status === 'submitted') {
-        // Add document to Admin Page for checking
-        await updateForm(formId, {
-          adminCheckDocs: INCREMENT,
-        });
+    try {
+      // Get Company
+      const companyRef = dbDocRefs.getCompanyRef(companyId);
+      const companySnap = await companyRef.get();
+      const companyData = companySnap.data();
+      if (!companyData) {
+        throw new Error('Could not find any company data');
       }
-      // Accepted by Admin
-      if (status === 'admin-checked') {
-        // Remove document from Admin Page
-        await updateForm(formId, {
-          adminCheckDocs: DECREMENT,
-        });
-        // Increase adminAcceptedDocs in applicant
-        if (newDoc.isRequired) {
-          await updateApplicant(
-            { companyId, dashboardId, applicantId },
-            {
-              adminAcceptedDocs: INCREMENT,
-            }
-          );
-          // Increase Optional docs counter to show action button on dashboard
-        } else {
-          await updateApplicant(
-            { companyId, dashboardId, applicantId },
-            {
-              unCheckedOptionalDocs: INCREMENT,
-            }
-          );
-        }
-        // Increase dashboard actions count
-        await updateDashboardCounters(
-          companyId,
-          dashboardId,
-          'actionsCount',
-          1
-        );
-      }
-      // Accepted by User
-      if (status === 'accepted') {
-        // Increase accepted docs in applicant if required
-        if (newDoc.isRequired) {
-          await updateApplicant(
-            { companyId, dashboardId, applicantId },
-            {
-              acceptedDocs: INCREMENT,
-            }
-          );
-          // Decrease Optional docs counter to hide action button on dashboard
-        } else {
-          await updateApplicant(
-            { companyId, dashboardId, applicantId },
-            {
-              unCheckedOptionalDocs: DECREMENT,
-            }
-          );
-        }
 
-        // Remove action count from dashboard counter
-        await updateDashboardCounters(
-          companyId,
-          dashboardId,
-          'actionsCount',
-          -1
-        );
-        await stitchAndUploadPDF({ id: docId, ...newDoc });
-      }
-      if (status === 'rejected') {
-        // Rejected by Admin
-        if (prevDoc.status === 'submitted') {
-          // Remove document from Admin Page
+      if (prevDoc.status !== newDoc.status) {
+        const status = newDoc.status;
+        // Submitted by Applicant
+        if (status === 'submitted' && companyData.options.adminCheck) {
+          // Add document to Admin Page for checking
           await updateForm(formId, {
-            adminCheckDocs: DECREMENT,
+            adminCheckDocs: INCREMENT,
           });
         }
-        // Rejected by User
-        if (prevDoc.status === 'admin-checked') {
-          // Decrease adminAcceptedDocs in applicant if required
+        // Accepted by Admin
+        if (status === 'admin-checked') {
+          if (companyData.options.adminCheck) {
+            // Remove document from Admin Page
+            await updateForm(formId, {
+              adminCheckDocs: DECREMENT,
+            });
+          }
+          // Increase adminAcceptedDocs in applicant
           if (newDoc.isRequired) {
             await updateApplicant(
               { companyId, dashboardId, applicantId },
               {
-                adminAcceptedDocs: DECREMENT,
+                adminAcceptedDocs: INCREMENT,
               }
             );
-
+            // Increase Optional docs counter to show action button on dashboard
+          } else {
+            await updateApplicant(
+              { companyId, dashboardId, applicantId },
+              {
+                unCheckedOptionalDocs: INCREMENT,
+              }
+            );
+          }
+          // Increase dashboard actions count
+          await updateDashboardCounters(
+            companyId,
+            dashboardId,
+            'actionsCount',
+            1
+          );
+        }
+        // Accepted by User
+        if (status === 'accepted') {
+          // Increase accepted docs in applicant if required
+          if (newDoc.isRequired) {
+            await updateApplicant(
+              { companyId, dashboardId, applicantId },
+              {
+                acceptedDocs: INCREMENT,
+              }
+            );
             // Decrease Optional docs counter to hide action button on dashboard
           } else {
             await updateApplicant(
@@ -121,20 +94,62 @@ export const onDocStatusUpdate = functions
               }
             );
           }
-          // Decrease dashboard actions count
+
+          // Remove action count from dashboard counter
           await updateDashboardCounters(
             companyId,
             dashboardId,
             'actionsCount',
             -1
           );
+          await stitchAndUploadPDF({ id: docId, ...newDoc });
         }
+        if (status === 'rejected') {
+          // Rejected by Admin
+          if (prevDoc.status === 'submitted') {
+            // Remove document from Admin Page
+            await updateForm(formId, {
+              adminCheckDocs: DECREMENT,
+            });
+          }
+          // Rejected by User
+          if (prevDoc.status === 'admin-checked') {
+            // Decrease adminAcceptedDocs in applicant if required
+            if (newDoc.isRequired) {
+              await updateApplicant(
+                { companyId, dashboardId, applicantId },
+                {
+                  adminAcceptedDocs: DECREMENT,
+                }
+              );
+
+              // eslint-disable-next-line max-len
+              // Decrease Optional docs counter to hide action button on dashboard
+            } else {
+              await updateApplicant(
+                { companyId, dashboardId, applicantId },
+                {
+                  unCheckedOptionalDocs: DECREMENT,
+                }
+              );
+            }
+            // Decrease dashboard actions count
+            await updateDashboardCounters(
+              companyId,
+              dashboardId,
+              'actionsCount',
+              -1
+            );
+          }
+        }
+        await change.after.ref.update({
+          isUpdating: false,
+        });
+      } else {
+        return functions.logger.log('Document status not updated');
       }
-      await change.after.ref.update({
-        isUpdating: false,
-      });
-    } else {
-      return functions.logger.log('Document status not updated');
+    } catch (error) {
+      functions.logger.error(error);
     }
   });
 

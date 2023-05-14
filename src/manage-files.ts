@@ -9,6 +9,17 @@ import { storagePaths } from './utils/storage';
 import { dbDocRefs } from './utils/db';
 type ContentTypes = 'jpeg' | 'pdf';
 const NEW_IMAGE_WIDTH = 1240;
+interface CustomMetadata {
+  companyId: string;
+  dashboardId: string;
+  applicantId: string;
+  docId: string;
+  formId: string;
+  format: ContentTypes;
+  submissionCount: string;
+  angle?: '0' | '90' | '180' | '270';
+  fixImage?: string;
+}
 
 export const updateImageProperties = functions
   .region('asia-southeast2')
@@ -106,143 +117,143 @@ const fixImagePipeline = (
   return pipeline;
 };
 
-export const onImagePropertyUpdated = functions
-  .region('asia-southeast2')
-  .runWith({
-    timeoutSeconds: 400,
-    memory: '1GB',
-    secrets: ['SITE_ENGINE_API_SECRET', 'SITE_ENGINE_API_USER'],
-  })
-  .storage.object()
-  .onMetadataUpdate(async (object, context) => {
-    const metadata = object.metadata as {
-      property: 'removeBrightness';
-      format: 'jpeg' | 'pdf';
-      companyId: string;
-      dashboardId: string;
-      applicantId: string;
-    };
-    const filePath = object.name as string;
-    const fileName = filePath.split('/').pop() as string;
-    const newFileName = fileName.split('.')[0] + `.${metadata.format}`;
-    functions.logger.log('metadata', metadata, 'filePath', filePath);
-    if (metadata && metadata.property === 'removeBrightness') {
-      const { companyId, dashboardId, applicantId } = metadata;
-      const readableStream = getReadableStream(filePath);
-      const newFilePath = getNewFilePath(
-        'companies',
-        companyId,
-        'dashboards',
-        dashboardId,
-        'fixed',
-        applicantId,
-        newFileName
-      );
+// export const onImagePropertyUpdated = functions
+//   .region('asia-southeast2')
+//   .runWith({
+//     timeoutSeconds: 400,
+//     memory: '1GB',
+//     secrets: ['SITE_ENGINE_API_SECRET', 'SITE_ENGINE_API_USER'],
+//   })
+//   .storage.object()
+//   .onMetadataUpdate(async (object, context) => {
+//     const metadata = object.metadata as {
+//       property: 'removeBrightness';
+//       format: 'jpeg' | 'pdf';
+//       companyId: string;
+//       dashboardId: string;
+//       applicantId: string;
+//     };
+//     const filePath = object.name as string;
+//     const fileName = filePath.split('/').pop() as string;
+//     const newFileName = fileName.split('.')[0] + `.${metadata.format}`;
+//     functions.logger.log('metadata', metadata, 'filePath', filePath);
+//     if (metadata && metadata.property === 'removeBrightness') {
+//       const { companyId, dashboardId, applicantId } = metadata;
+//       const readableStream = getReadableStream(filePath);
+//       const newFilePath = getNewFilePath(
+//         'companies',
+//         companyId,
+//         'dashboards',
+//         dashboardId,
+//         'fixed',
+//         applicantId,
+//         newFileName
+//       );
 
-      const buffer = await readableStream
-        .pipe(
-          toJPEG('fix', {
-            removeBrightness: true,
-          })
-        )
-        .toBuffer();
-      const imageProperties = await getImageProperties(buffer, filePath);
+//       const buffer = await readableStream
+//         .pipe(
+//           toJPEG('fix', {
+//             removeBrightness: true,
+//           })
+//         )
+//         .toBuffer();
+//       const imageProperties = await getImageProperties(buffer, filePath);
 
-      const writableStream = getWritableStream(newFilePath, {
-        contentType:
-          metadata.format === 'pdf' ? 'application/pdf' : 'image/jpeg',
-        contentDisposition: 'inline',
-        metadata: {
-          ...imageProperties,
-        },
-      });
+//       const writableStream = getWritableStream(newFilePath, {
+//         contentType:
+//           metadata.format === 'pdf' ? 'application/pdf' : 'image/jpeg',
+//         contentDisposition: 'inline',
+//         metadata: {
+//           ...imageProperties,
+//         },
+//       });
 
-      if (metadata.format === 'pdf') {
-        const imageMetadata = await sharp(buffer).metadata();
-        const width = imageMetadata.width;
-        const height = imageMetadata.height;
+//       if (metadata.format === 'pdf') {
+//         const imageMetadata = await sharp(buffer).metadata();
+//         const width = imageMetadata.width;
+//         const height = imageMetadata.height;
 
-        if (!width || !height) return;
+//         if (!width || !height) return;
 
-        toPDF(buffer, {
-          width,
-          height,
-        }).pipe(writableStream);
+//         toPDF(buffer, {
+//           width,
+//           height,
+//         }).pipe(writableStream);
 
-        await new Promise((resolve, reject) => {
-          writableStream.on('finish', resolve).on('error', reject);
-        });
-        functions.logger.log('Successfully updated image property');
-      }
-    }
-  });
+//         await new Promise((resolve, reject) => {
+//           writableStream.on('finish', resolve).on('error', reject);
+//         });
+//         functions.logger.log('Successfully updated image property');
+//       }
+//     }
+//   });
 
-export const onImageStatusUpdated = functions
-  .region('asia-southeast2')
-  .runWith({
-    timeoutSeconds: 400,
-    memory: '1GB',
-  })
-  .storage.object()
-  .onMetadataUpdate(async (object, context) => {
-    const metadata = object.metadata as {
-      status: 'accepted' | 'rejected';
-      updatedName: string;
-      companyId: string;
-      dashboardId: string;
-      applicantId: string;
-    };
-    const filePath = object.name as string;
-    if (metadata && metadata.status === 'accepted') {
-      const { companyId, dashboardId, applicantId, updatedName } = metadata;
-      const contentType = object.contentType as string;
-      const readableStream = getReadableStream(filePath);
-      const newFilePath = getNewFilePath(
-        'companies',
-        companyId,
-        'dashboards',
-        dashboardId,
-        'accepted',
-        applicantId,
-        updatedName
-      );
-      const writableStream = getWritableStream(newFilePath, {
-        contentType,
-      });
+// export const onImageStatusUpdated = functions
+//   .region('asia-southeast2')
+//   .runWith({
+//     timeoutSeconds: 400,
+//     memory: '1GB',
+//   })
+//   .storage.object()
+//   .onMetadataUpdate(async (object, context) => {
+//     const metadata = object.metadata as {
+//       status: 'accepted' | 'rejected';
+//       updatedName: string;
+//       companyId: string;
+//       dashboardId: string;
+//       applicantId: string;
+//     };
+//     const filePath = object.name as string;
+//     if (metadata && metadata.status === 'accepted') {
+//       const { companyId, dashboardId, applicantId, updatedName } = metadata;
+//       const contentType = object.contentType as string;
+//       const readableStream = getReadableStream(filePath);
+//       const newFilePath = getNewFilePath(
+//         'companies',
+//         companyId,
+//         'dashboards',
+//         dashboardId,
+//         'accepted',
+//         applicantId,
+//         updatedName
+//       );
+//       const writableStream = getWritableStream(newFilePath, {
+//         contentType,
+//       });
 
-      readableStream.pipe(writableStream);
+//       readableStream.pipe(writableStream);
 
-      await new Promise((resolve, reject) => {
-        writableStream.on('finish', resolve).on('error', reject);
-      });
-      functions.logger.log('Successfully moved file to accepted folder');
-    }
+//       await new Promise((resolve, reject) => {
+//         writableStream.on('finish', resolve).on('error', reject);
+//       });
+//       functions.logger.log('Successfully moved file to accepted folder');
+//     }
 
-    if (metadata && metadata.status === 'rejected') {
-      const { companyId, dashboardId, applicantId, updatedName } = metadata;
-      const contentType = object.contentType as string;
-      const readableStream = getReadableStream(filePath);
-      const newFilePath = getNewFilePath(
-        'companies',
-        companyId,
-        'dashboards',
-        dashboardId,
-        'rejected',
-        applicantId,
-        updatedName
-      );
-      const writableStream = getWritableStream(newFilePath, {
-        contentType,
-      });
+//     if (metadata && metadata.status === 'rejected') {
+//       const { companyId, dashboardId, applicantId, updatedName } = metadata;
+//       const contentType = object.contentType as string;
+//       const readableStream = getReadableStream(filePath);
+//       const newFilePath = getNewFilePath(
+//         'companies',
+//         companyId,
+//         'dashboards',
+//         dashboardId,
+//         'rejected',
+//         applicantId,
+//         updatedName
+//       );
+//       const writableStream = getWritableStream(newFilePath, {
+//         contentType,
+//       });
 
-      readableStream.pipe(writableStream);
+//       readableStream.pipe(writableStream);
 
-      await new Promise((resolve, reject) => {
-        writableStream.on('finish', resolve).on('error', reject);
-      });
-      functions.logger.log('Successfully moved file to rejected folder');
-    }
-  });
+//       await new Promise((resolve, reject) => {
+//         writableStream.on('finish', resolve).on('error', reject);
+//       });
+//       functions.logger.log('Successfully moved file to rejected folder');
+//     }
+//   });
 
 export const onSampleUpload = functions
   .region('asia-southeast2')
@@ -302,15 +313,7 @@ export const onPDFUpload = functions
   .onFinalize(async (object, context) => {
     const filePath = object.name as string;
     const contentType = object.contentType as string;
-    const metadata = object.metadata as {
-      companyId: string;
-      dashboardId: string;
-      applicantId: string;
-      docId: string;
-      formId: string;
-      format: ContentTypes;
-      submissionCount: string;
-    };
+    const metadata = object.metadata as unknown as CustomMetadata;
 
     if (
       contentType === 'application/pdf' &&
@@ -348,16 +351,7 @@ export const onImageUpload = functions
   .onFinalize(async (object, context) => {
     const filePath = object.name as string;
     const contentType = object.contentType as string;
-    const metadata = object.metadata as {
-      companyId: string;
-      dashboardId: string;
-      applicantId: string;
-      docId: string;
-      formId: string;
-      format: ContentTypes;
-      submissionCount: string;
-      angle?: '0' | '90' | '180' | '270';
-    };
+    const metadata = object.metadata as unknown as CustomMetadata;
 
     if (!filePath.includes('temporary-docs/')) {
       return functions.logger.log('Document is not an applicant doc');
@@ -367,7 +361,8 @@ export const onImageUpload = functions
       return functions.logger.log('This is not an image');
     }
 
-    const { companyId, dashboardId, applicantId, format, angle } = metadata;
+    const { companyId, dashboardId, applicantId, format, angle, fixImage } =
+      metadata;
     const readableStream = getReadableStream(filePath);
     const resizedImage = await readableStream
       .pipe(toJPEG('resize', { angle }))
@@ -399,7 +394,14 @@ export const onImageUpload = functions
     }>[] = [];
 
     promises.push(
-      manageFixedFile(fileName, filePath, fixedFilePath, format, angle)
+      manageFixedFile(
+        fileName,
+        filePath,
+        fixedFilePath,
+        format,
+        fixImage,
+        angle
+      )
     );
     promises.push(
       manageOriginalFile(
@@ -422,13 +424,19 @@ const manageFixedFile = async (
   filePath: string,
   newFilePath: string,
   format: ContentTypes,
+  fixImage?: string,
   angle?: '0' | '90' | '180' | '270'
 ) => {
   const readableStream = getReadableStream(filePath);
-  const imageBuffer = await readableStream
-    .pipe(toJPEG('resize'))
-    .pipe(toJPEG('fix', { angle }))
-    .toBuffer();
+  const pipeline = toJPEG('resize');
+  if (fixImage && fixImage === 'true') {
+    pipeline.pipe(toJPEG('fix', { angle }));
+  }
+  const imageBuffer = await readableStream.pipe(pipeline).toBuffer();
+  // const imageBuffer = await readableStream
+  //   .pipe(toJPEG('resize'))
+  //   .pipe(toJPEG('fix', { angle }))
+  //   .toBuffer();
   const imageProperties = await getImageProperties(imageBuffer, filePath);
   const writableStream = getWritableStream(newFilePath, {
     contentType: getContentType(format),

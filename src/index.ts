@@ -51,8 +51,6 @@ export const {
   onImageUpload,
   onPDFUpload,
   onSampleUpload,
-  onImageStatusUpdated,
-  onImagePropertyUpdated,
   updateImageProperties,
 } = manageFiles;
 export const { addApplicantsToDashboard, copySamples } = dashboards;
