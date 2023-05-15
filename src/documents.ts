@@ -169,7 +169,7 @@ export const restitchAndUploadPDF = functions
         functions.logger.log('Not restitching document');
       }
     } catch (error) {
-      functions.logger.error(error);
+      functions.logger.debug('Error stiching document', error);
     } finally {
       const { companyId, id } = newApplicantDocumentWithId;
       const docRef = dbDocRefs.getDocumentRef(companyId, id);
@@ -210,8 +210,14 @@ export const stitchPDFPages = async (pages: ApplicantPage[]) => {
   functions.logger.log('Running stitchPDFPages');
   const pdfDoc = await PDFDocument.create();
   for (const page of pages) {
+    let DOC_FOLDER: 'fixed' | 'originals';
+    if (page.submittedFormat === 'application/pdf') {
+      DOC_FOLDER = 'originals';
+    } else {
+      DOC_FOLDER = 'fixed';
+    }
     // eslint-disable-next-line max-len
-    const filePath = `companies/${page.companyId}/dashboards/${page.dashboardId}/fixed/${page.applicantId}/${page.name}.pdf`;
+    const filePath = `companies/${page.companyId}/dashboards/${page.dashboardId}/${DOC_FOLDER}/${page.applicantId}/${page.name}.pdf`;
     const [pdf] = await bucket.file(filePath).download();
     const doc = await PDFDocument.load(pdf);
     const docPages = await pdfDoc.copyPages(doc, doc.getPageIndices());
