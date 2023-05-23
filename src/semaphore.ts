@@ -13,7 +13,7 @@ export const sendSMS = async (smsData: SMSData) => {
       .split('')
       .filter((l) => numbers.includes(l))
       .join(''),
-    sendername,
+    sendername: sendername ? sendername : 'HUNYO',
   };
 
   const response = await axios.post(URL_ENDPOINT, payload);
