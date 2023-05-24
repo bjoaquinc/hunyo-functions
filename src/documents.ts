@@ -2,12 +2,19 @@ import * as functions from 'firebase-functions';
 import { FieldValue } from 'firebase-admin/firestore';
 import { bucket } from './index';
 import { dbColRefs, dbDocRefs } from './utils/db';
-import { ApplicantDocument, ApplicantPage } from './utils/types';
+import {
+  ApplicantDocument,
+  ApplicantPage,
+  EmailData,
+  SendApplicantDocumentRejectionTemplate,
+} from './utils/types';
 // import { incrementApplicantDocs } from './applicants';
 import { updateDashboardCounters } from './dashboards';
 import { updateForm } from './forms';
 import { updateApplicant } from './applicants';
 import { PDFDocument } from 'pdf-lib';
+import { getFormLink, getFormattedDate } from './utils/helpers';
+import { createMessage } from './messages';
 
 export const onDocStatusUpdate = functions
   .region('asia-southeast2')
@@ -141,6 +148,15 @@ export const onDocStatusUpdate = functions
               -1
             );
           }
+          // Send Rejection Email to Applicant
+          const EMAIL_DATA = await getRejectionMessage({
+            id: docId,
+            ...newDoc,
+          });
+          await createMessage({
+            messageTypes: companyData.messageTypes,
+            emailData: EMAIL_DATA,
+          });
         }
         await change.after.ref.update({
           isUpdating: false,
@@ -152,6 +168,77 @@ export const onDocStatusUpdate = functions
       functions.logger.error(error);
     }
   });
+
+const getRejectionMessage = async (
+  doc: ApplicantDocument & { id: string }
+): Promise<EmailData> => {
+  const { companyId, dashboardId, applicantId, formId } = doc;
+
+  // Get Applicant
+  const applicantRef = dbDocRefs.getApplicantRef(
+    companyId,
+    dashboardId,
+    applicantId
+  );
+  const applicantSnap = await applicantRef.get();
+  const applicantData = applicantSnap.data();
+  if (!applicantData || !applicantData.name) {
+    throw new Error('Could not find any applicant data');
+  }
+
+  // Get Company
+  const companyRef = dbDocRefs.getCompanyRef(companyId);
+  const companySnap = await companyRef.get();
+  const companyData = companySnap.data();
+  if (!companyData) {
+    throw new Error('Could not find any company data');
+  }
+
+  // Get Dashboard
+  const dashboardRef = dbDocRefs.getPublishedDashboardRef(
+    companyId,
+    dashboardId
+  );
+  const dashboardSnap = await dashboardRef.get();
+  const dashboardData = dashboardSnap.data();
+  if (!dashboardData) {
+    throw new Error('Could not find any dashboard data');
+  }
+
+  // Get email data
+  const SUBJECT = `Action Required: Please resubmit ${doc.alias || doc.name}`;
+  const FROM_NAME = companyData.name;
+  const BODY = `Dear ${applicantData.name.first},<br><br>
+  We are unable to accept your document. Please resubmit your document.<br><br>
+  Thank you,<br>
+  ${companyData.name}`;
+  const FORM_LINK = getFormLink(formId);
+  const FORMATTED_DEADLINE = getFormattedDate(dashboardData.deadline);
+
+  const TEMPLATE_DATA: SendApplicantDocumentRejectionTemplate = {
+    name: 'Applicant Reject Email',
+    data: {
+      formLink: FORM_LINK,
+      documentName: doc.alias || doc.name,
+      companyName: companyData.name,
+      companyDeadline: FORMATTED_DEADLINE,
+      applicantName: applicantData.name.first,
+    },
+  };
+
+  return {
+    subject: SUBJECT,
+    recipients: [
+      {
+        email: applicantData.email,
+        type: 'to',
+      },
+    ],
+    fromName: FROM_NAME,
+    body: BODY,
+    template: TEMPLATE_DATA,
+  };
+};
 
 export const restitchAndUploadPDF = functions
   .region('asia-southeast2')

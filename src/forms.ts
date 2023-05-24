@@ -15,6 +15,7 @@ import { dbDocRefs, dbColRefs } from './utils/db';
 import { createDocument } from './documents';
 import { DateTime } from 'luxon';
 import { getDocumentsRequestMessage } from './utils/sms_messages';
+import { getFormLink } from './utils/helpers';
 
 export const createForm = functions
   .region('asia-southeast2')
@@ -135,14 +136,7 @@ export const sendFormLinkToApplicant = functions
     };
 
     // Generate Applicant URL
-    const DEV_URL = 'http://localhost:8080';
-    const PROD_URL = 'https://hunyo.design';
-    let FORM_LINK = '';
-    if (process.env.FUNCTIONS_EMULATOR) {
-      FORM_LINK = `${DEV_URL}/applicant/forms/${form.id}`;
-    } else {
-      FORM_LINK = `${PROD_URL}/applicant/forms/${form.id}`;
-    }
+    const FORM_LINK = getFormLink(form.id);
 
     // Get email data
     if (messageTypes.includes('email')) {

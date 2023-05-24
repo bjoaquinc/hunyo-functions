@@ -75,7 +75,6 @@ export const updateApplicantLatestMessage = functions
     const newMessage = change.after.data() as Message;
     const messageId = context.params.messageId;
     const { emailData } = newMessage;
-    functions.logger.log('Response data: ', emailData?.messageResponseData);
     if (emailData && emailData.metadata && emailData.messageResponseData) {
       const { companyId, dashboardId, applicantId } = emailData.metadata;
       if (!companyId || !dashboardId || !applicantId) {

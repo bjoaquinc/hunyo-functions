@@ -2,7 +2,7 @@
 import mailchimp, { MessagesMessage } from '@mailchimp/mailchimp_transactional';
 import {
   EmailTemplate,
-  // SendApplicantDocumentRejectionTemplate,
+  SendApplicantDocumentRejectionTemplate,
   SendApplicantDocumentRequestTemplate,
   SendTeamInvite,
   EmailData,
@@ -52,10 +52,10 @@ const sendTemplateMessage = async (
     return response;
   }
 
-  // if (template.name === 'Applicant Documents Rejection') {
-  //   const response = await emailTemplates[template.name](message, template);
-  //   return response;
-  // }
+  if (template.name === 'Applicant Reject Email') {
+    const response = await emailTemplates[template.name](message, template);
+    return response;
+  }
   throw new Error('Template name does not exist');
 };
 
@@ -96,38 +96,46 @@ const emailTemplates = {
       });
     return response;
   },
-  // 'Applicant Documents Rejection': async (
-  //   message: MessagesMessage,
-  //   template: SendApplicantDocumentRejectionTemplate
-  // ) => {
-  //   const client = mailchimp("md-36uq0tM9ZEoaZ9ckcedpGQ");
-  //   const response = await client.messages
-  //     .sendTemplate({
-  //       message: {
-  //         global_merge_vars: [
-  //           {
-  //             name: 'FORM_LINK',
-  //             content: template.data.formLink,
-  //           },
-  //           {
-  //             name: 'COMPANY_NAME',
-  //             content: template.data.companyName,
-  //           },
-  //           {
-  //             name: 'APPLICANT_NAME',
-  //             content: template.data.applicantFirstName,
-  //           },
-  //         ],
-  //         ...message,
-  //       },
-  //       template_name: template.name,
-  //       template_content: [],
-  //     })
-  //     .catch((error) => {
-  //       throw error;
-  //     });
-  //   return response;
-  // },
+  'Applicant Reject Email': async (
+    message: MessagesMessage,
+    template: SendApplicantDocumentRejectionTemplate
+  ) => {
+    const client = mailchimp(process.env.MAILCHIMP_API_KEY as string);
+    const response = await client.messages
+      .sendTemplate({
+        message: {
+          global_merge_vars: [
+            {
+              name: 'FORM_LINK',
+              content: template.data.formLink,
+            },
+            {
+              name: 'COMPANY_NAME',
+              content: template.data.companyName,
+            },
+            {
+              name: 'APPLICANT_NAME',
+              content: template.data.applicantName as string,
+            },
+            {
+              name: 'DOCUMENT_NAME',
+              content: template.data.documentName,
+            },
+            {
+              name: 'COMPANY_DEADLINE',
+              content: template.data.companyDeadline,
+            },
+          ],
+          ...message,
+        },
+        template_name: template.name,
+        template_content: [],
+      })
+      .catch((error) => {
+        throw error;
+      });
+    return response;
+  },
   'Team Invite Message': async (
     message: MessagesMessage,
     template: SendTeamInvite

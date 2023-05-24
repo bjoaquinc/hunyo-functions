@@ -275,13 +275,24 @@ export interface EmailData {
 
 export type EmailTemplate =
   | SendApplicantDocumentRequestTemplate
-  | SendTeamInvite;
-// | SendApplicantDocumentRejectionTemplate;
+  | SendTeamInvite
+  | SendApplicantDocumentRejectionTemplate;
 
 export interface SendApplicantDocumentRequestTemplate {
   name: 'Applicant Documents Request';
   data: {
     formLink: string;
+    companyName: string;
+    companyDeadline: string;
+    applicantName?: string;
+  };
+}
+
+export interface SendApplicantDocumentRejectionTemplate {
+  name: 'Applicant Reject Email';
+  data: {
+    formLink: string;
+    documentName: string;
     companyName: string;
     companyDeadline: string;
     applicantName?: string;
