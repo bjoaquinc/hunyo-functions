@@ -13,9 +13,8 @@ import { updateApplicant } from './applicants';
 import { createMessage } from './messages';
 import { dbDocRefs, dbColRefs } from './utils/db';
 import { createDocument } from './documents';
-import { DateTime } from 'luxon';
 import { getDocumentsRequestMessage } from './utils/sms_messages';
-import { getFormLink } from './utils/helpers';
+import { getFormLink, getFormattedDate } from './utils/helpers';
 
 export const createForm = functions
   .region('asia-southeast2')
@@ -142,12 +141,7 @@ export const sendFormLinkToApplicant = functions
     if (messageTypes.includes('email')) {
       const EMAIL_SUBJECT =
         'Action required: New documents needed for your application';
-      const dateTime = DateTime.fromMillis(dashboard.deadline.toMillis());
-      const DEADLINE = dateTime.toLocaleString({
-        month: 'long',
-        day: '2-digit',
-        year: 'numeric',
-      });
+      const DEADLINE = getFormattedDate(dashboard.deadline);
       const APPLICANT_NAME = form.applicant.name;
       const template: SendApplicantDocumentRequestTemplate = {
         name: 'Applicant Documents Request',

@@ -13,7 +13,7 @@ import {
 } from './utils/types';
 import { updateDashboardCounters } from './dashboards';
 import { createMessage } from './messages';
-import { DateTime } from 'luxon';
+import { getFormLink, getFormattedDate } from './utils/helpers';
 
 export const onDeleteApplicant = functions
   .region('asia-southeast2')
@@ -161,21 +161,8 @@ export const resendLinkToApplicant = functions
       const EMAIL_SUBJECT =
         'Action required: New documents needed for your application';
 
-      const DEV_URL = 'http://localhost:8080';
-      const PROD_URL = 'https://hunyo.design';
-      let FORM_LINK = '';
-      if (process.env.FUNCTIONS_EMULATOR) {
-        FORM_LINK = `${DEV_URL}/applicant/forms/${newApplicant.formId}`;
-      } else {
-        FORM_LINK = `${PROD_URL}/applicant/forms/${newApplicant.formId}`;
-      }
-      const DEADLINE = DateTime.fromMillis(
-        dashboard.deadline.toMillis()
-      ).toLocaleString({
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric',
-      });
+      const FORM_LINK = getFormLink(newApplicant.formId);
+      const DEADLINE = getFormattedDate(dashboard.deadline);
       const APPLICANT_NAME = newApplicant.name?.first;
       const TEMPLATE: SendApplicantDocumentRequestTemplate = {
         name: 'Applicant Documents Request',
