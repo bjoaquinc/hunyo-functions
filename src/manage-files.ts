@@ -9,7 +9,7 @@ import { storagePaths } from './utils/storage';
 import { dbDocRefs } from './utils/db';
 type ContentTypes = 'jpeg' | 'pdf';
 const NEW_IMAGE_WIDTH = 1240;
-interface CustomMetadata {
+export interface CustomMetadata {
   companyId: string;
   dashboardId: string;
   applicantId: string;
@@ -344,7 +344,7 @@ export const onImageUpload = functions
   .region('asia-southeast2')
   .runWith({
     timeoutSeconds: 400,
-    memory: '1GB',
+    memory: '4GB',
     secrets: ['SITE_ENGINE_API_SECRET', 'SITE_ENGINE_API_USER'],
   })
   .storage.object()
@@ -418,6 +418,74 @@ export const onImageUpload = functions
 
     return functions.logger.log('Successfully processed image');
   });
+
+export const triggerOnImageUpload = async (
+  filePath: string,
+  contentType: string,
+  metadata: CustomMetadata
+) => {
+  // const filePath = object.name as string;
+  //   const contentType = object.contentType as string;
+  //   const metadata = object.metadata as unknown as CustomMetadata;
+
+  if (!filePath.includes('temporary-docs/')) {
+    return functions.logger.log('Document is not an applicant doc');
+  }
+
+  if (!contentType.startsWith('image/')) {
+    return functions.logger.log('This is not an image');
+  }
+
+  const { companyId, dashboardId, applicantId, format, angle, fixImage } =
+    metadata;
+  const readableStream = getReadableStream(filePath);
+  const resizedImage = await readableStream
+    .pipe(toJPEG('resize', { angle }))
+    .toBuffer();
+  const imageProperties = await getImageProperties(resizedImage, filePath);
+  const fileName = filePath.split('/').pop() as string;
+  const originalFilePath = getNewFilePath(
+    'companies',
+    companyId,
+    'dashboards',
+    dashboardId,
+    'originals',
+    applicantId,
+    fileName + `.jpeg`
+  );
+  const fixedFilePath = getNewFilePath(
+    'companies',
+    companyId,
+    'dashboards',
+    dashboardId,
+    'fixed',
+    applicantId,
+    fileName + `.${format}`
+  );
+  const promises: Promise<void | {
+    brightness: number;
+    sharpness: number;
+    contrast: number;
+  }>[] = [];
+
+  promises.push(
+    manageFixedFile(fileName, filePath, fixedFilePath, format, fixImage, angle)
+  );
+  promises.push(
+    manageOriginalFile(
+      resizedImage,
+      originalFilePath,
+      fileName,
+      'jpeg',
+      imageProperties,
+      angle
+    )
+  );
+  await Promise.all(promises);
+  await bucket.file(filePath).delete();
+
+  return functions.logger.log('Successfully processed image');
+};
 
 const manageFixedFile = async (
   fileName: string,

@@ -41,12 +41,11 @@ import * as applicants from './applicants';
 import * as documents from './documents';
 import * as pages from './pages';
 import * as invites from './invites';
-// import * as maintenance from './maintenance/update_firestore';
+import * as maintenance from './maintenance/update_firestore';
 
 export const { addCompanyUserRole } = privateData;
-export const { addUserToCompany } = denormalize;
-export const { createForm, onApplicantNameChange, sendFormLinkToApplicant } =
-  forms;
+export const { addUserToCompany, denormalizeApplicantData } = denormalize;
+export const { createForm, sendFormLinkToApplicant } = forms;
 export const {
   onImageUpload,
   onPDFUpload,
@@ -62,9 +61,9 @@ export const {
 } = applicants;
 export const {
   onDocStatusUpdate,
-  toggleStatusNotApplicable,
+  updateFinalDocumentName,
   restitchAndUploadPDF,
 } = documents;
 export const { onDeletePage } = pages;
 export const { onCreateInvite } = invites;
-// export const { addFormIdsToApplicant } = maintenance;
+export const { fixImageUpload } = maintenance;

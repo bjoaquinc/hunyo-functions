@@ -9,7 +9,7 @@ import {
   EmailData,
   SMSData,
 } from './utils/types';
-import { updateApplicant } from './applicants';
+// import { updateApplicant } from './applicants';
 import { createMessage } from './messages';
 import { dbDocRefs, dbColRefs } from './utils/db';
 import { createDocument } from './documents';
@@ -185,29 +185,29 @@ export const sendFormLinkToApplicant = functions
     await createMessage(message);
   });
 
-export const onApplicantNameChange = functions
-  .region('asia-southeast2')
-  .firestore.document('forms/{formId}')
-  .onUpdate(async (change, context) => {
-    const prevForm = change.before.data() as Form;
-    const newForm = change.after.data() as Form;
-    const nameHasChanged =
-      prevForm.applicant.name !== newForm.applicant.name ||
-      prevForm.applicant.name?.first !== newForm.applicant.name?.first;
-    prevForm.applicant.name?.last !== newForm.applicant.name?.last;
+// export const onApplicantNameChange = functions
+//   .region('asia-southeast2')
+//   .firestore.document('forms/{formId}')
+//   .onUpdate(async (change, context) => {
+//     const prevForm = change.before.data() as Form;
+//     const newForm = change.after.data() as Form;
+//     const nameHasChanged =
+//       prevForm.applicant.name !== newForm.applicant.name ||
+//       prevForm.applicant.name?.first !== newForm.applicant.name?.first;
+//     prevForm.applicant.name?.last !== newForm.applicant.name?.last;
 
-    if (nameHasChanged) {
-      const name = newForm.applicant.name;
-      const { company, dashboard, applicant } = newForm;
-      await updateApplicant(
-        {
-          companyId: company.id,
-          dashboardId: dashboard.id,
-          applicantId: applicant.id,
-        },
-        {
-          name,
-        }
-      );
-    }
-  });
+//     if (nameHasChanged) {
+//       const name = newForm.applicant.name;
+//       const { company, dashboard, applicant } = newForm;
+//       await updateApplicant(
+//         {
+//           companyId: company.id,
+//           dashboardId: dashboard.id,
+//           applicantId: applicant.id,
+//         },
+//         {
+//           name,
+//         }
+//       );
+//     }
+//   });

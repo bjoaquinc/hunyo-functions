@@ -1,4 +1,7 @@
-// import * as functions from 'firebase-functions';
+import { error } from 'firebase-functions/logger';
+import * as functions from 'firebase-functions';
+import { bucket } from '../index';
+import { CustomMetadata, triggerOnImageUpload } from '../manage-files';
 // import * as admin from 'firebase-admin';
 // import { dbColRefs, dbDocRefs } from '../utils/db';
 
@@ -110,3 +113,43 @@
 //       return functions.logger.error(err);
 //     }
 //   });
+
+export const fixImageUpload = functions
+  .region('asia-southeast2')
+  .runWith({
+    timeoutSeconds: 400,
+    memory: '4GB',
+    secrets: ['SITE_ENGINE_API_SECRET', 'SITE_ENGINE_API_USER'],
+  })
+  .pubsub.schedule('45 17 19 * *')
+  .timeZone('Asia/Manila')
+  .onRun(async (context) => {
+    try {
+      // Get temporary docs
+      const temporaryStoragePath = 'temporary-docs/';
+      const [files] = await bucket.getFiles({
+        prefix: temporaryStoragePath,
+      });
+      // loop through files and move them to the correct path
+      const promises: Promise<void>[] = [];
+      for (const file of files) {
+        const filePath = file.name;
+        const contentType = (file.metadata as { [key: string]: string })
+          .contentType;
+        const metadata = await file.getMetadata();
+        const customMetadata = (
+          metadata[0] as { [key: string]: CustomMetadata }
+        ).metadata;
+        const promise = triggerOnImageUpload(
+          filePath,
+          contentType,
+          customMetadata
+        );
+        promises.push(promise);
+      }
+      await Promise.all(promises);
+      functions.logger.log('Successfully moved all files');
+    } catch (err) {
+      error(err);
+    }
+  });

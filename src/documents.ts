@@ -15,6 +15,7 @@ import { updateApplicant } from './applicants';
 import { PDFDocument } from 'pdf-lib';
 import { getFormLink, getFormattedDate } from './utils/helpers';
 import { createMessage } from './messages';
+import { storagePaths } from './utils/storage';
 
 export const onDocStatusUpdate = functions
   .region('asia-southeast2')
@@ -318,40 +319,43 @@ export const stitchPDFPages = async (pages: ApplicantPage[]) => {
   return mergedDocBuffer;
 };
 
-export const toggleStatusNotApplicable = functions
+export const updateFinalDocumentName = functions
   .region('asia-southeast2')
   .firestore.document('companies/{companyId}/documents/{documentId}')
   .onUpdate(async (change, context) => {
-    const prevDoc = change.before.data() as ApplicantDocument;
-    const newDoc = change.after.data() as ApplicantDocument;
-    const increment = FieldValue.increment(1);
-    const decrement = FieldValue.increment(-1);
-    const { companyId, dashboardId, applicantId } = newDoc;
-
-    if (
-      newDoc.status === 'not-applicable' &&
-      prevDoc.status !== 'not-applicable'
-    ) {
-      const applicantRef = dbDocRefs.getApplicantRef(
-        companyId,
-        dashboardId,
-        applicantId
-      );
-      await applicantRef.update({
-        totalDocs: decrement,
-      });
-    } else if (
-      newDoc.status !== 'not-applicable' &&
-      prevDoc.status === 'not-applicable'
-    ) {
-      const applicantRef = dbDocRefs.getApplicantRef(
-        companyId,
-        dashboardId,
-        applicantId
-      );
-      await applicantRef.update({
-        totalDocs: increment,
-      });
+    try {
+      const newDocument = change.after.data() as ApplicantDocument;
+      const prevDocument = change.before.data() as ApplicantDocument;
+      if (
+        newDocument.updatedName !== prevDocument.updatedName &&
+        newDocument.status === 'accepted'
+      ) {
+        const { companyId, dashboardId, applicantId, updatedName } =
+          newDocument;
+        const { updatedName: prevUpdatedName } = prevDocument;
+        if (!updatedName || !prevUpdatedName) {
+          throw new Error('Updated name is not defined');
+        }
+        const prevFilePath = storagePaths.getFinalDocPath(
+          companyId,
+          dashboardId,
+          applicantId,
+          prevUpdatedName
+        );
+        const newFilePath = storagePaths.getFinalDocPath(
+          companyId,
+          dashboardId,
+          applicantId,
+          updatedName
+        );
+        const finalDocumentRef = bucket.file(prevFilePath);
+        await finalDocumentRef.setMetadata({
+          contentDisposition: `attachment; filename="${updatedName}"`,
+        });
+        await finalDocumentRef.rename(newFilePath);
+      }
+    } catch (error) {
+      functions.logger.error('Error updating final document name', error);
     }
   });
 

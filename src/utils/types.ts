@@ -152,6 +152,15 @@ export interface ApplicantWithFormId extends Applicant {
   formId: string;
 }
 
+export interface ApplicantWithData extends Omit<Applicant, 'name'> {
+  name: {
+    first: string;
+    middle: string;
+    last: string;
+  };
+  formId: string;
+}
+
 export interface Form {
   createdAt: Timestamp;
   applicant: {
